@@ -1,20 +1,14 @@
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 
 async function signUp() {
   "use server";
-  const hdrs = await headers();
-  const host = hdrs.get("host") ?? "localhost:3000";
-  const proto = host.startsWith("localhost") ? "http" : "https";
-  const origin = `${proto}://${host}`;
-
   const params = new URLSearchParams({
     client_id: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID!,
     response_type: "code",
     scope: "openid email",
-    redirect_uri: `${origin}/auth/callback`,
+    redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
   });
 
   redirect(`${process.env.NEXT_PUBLIC_COGNITO_DOMAIN}/signup?${params}`);
