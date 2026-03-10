@@ -111,6 +111,11 @@ export function TaskDetail({ taskId, open, onOpenChange, workspaceId }: TaskDeta
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="w-full sm:max-w-xl flex flex-col p-0 overflow-hidden">
+          {/* Always-present title for screen readers — satisfies Radix a11y requirement */}
+          <SheetHeader className="sr-only">
+            <SheetTitle>{task?.title ?? "Task Details"}</SheetTitle>
+          </SheetHeader>
+
           {isLoading ? (
             <div className="flex items-center justify-center flex-1">
               <LoadingSpinner size="lg" />
@@ -118,9 +123,9 @@ export function TaskDetail({ taskId, open, onOpenChange, workspaceId }: TaskDeta
           ) : task ? (
             <>
               {/* Top bar */}
-              <div className="flex items-center justify-between px-5 py-3 border-b bg-muted/30">
+              <div className="flex items-center justify-between px-5 py-3 border-b bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-950/30 dark:to-indigo-950/30">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono text-muted-foreground font-semibold uppercase tracking-wide">
+                  <span className="text-xs font-mono text-violet-600 dark:text-violet-400 font-semibold uppercase tracking-wide">
                     Task
                   </span>
                   <span className="text-xs text-muted-foreground/50">·</span>
@@ -163,7 +168,6 @@ export function TaskDetail({ taskId, open, onOpenChange, workspaceId }: TaskDeta
               <div className="flex-1 overflow-y-auto">
                 <div className="px-5 py-5 space-y-6">
                   {isEditing ? (
-                    /* ── Edit form ── */
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                       <div className="space-y-1.5">
                         <Label className="text-sm font-medium">Title</Label>
@@ -214,14 +218,9 @@ export function TaskDetail({ taskId, open, onOpenChange, workspaceId }: TaskDeta
                       </div>
                     </form>
                   ) : (
-                    /* ── Read view ── */
                     <>
-                      {/* Title */}
-                      <SheetHeader className="p-0">
-                        <SheetTitle className="text-left text-lg font-semibold leading-snug">
-                          {task.title}
-                        </SheetTitle>
-                      </SheetHeader>
+                      {/* Visible task title (not SheetTitle — that's sr-only above) */}
+                      <h2 className="text-lg font-semibold leading-snug">{task.title}</h2>
 
                       {/* Quick property pills */}
                       <div className="flex flex-wrap gap-2">
@@ -272,7 +271,6 @@ export function TaskDetail({ taskId, open, onOpenChange, workspaceId }: TaskDeta
 
                       {/* Metadata grid */}
                       <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-                        {/* Assignee */}
                         <div>
                           <div className="flex items-center gap-1.5 mb-1.5">
                             <User className="size-3 text-muted-foreground" />
@@ -297,7 +295,6 @@ export function TaskDetail({ taskId, open, onOpenChange, workspaceId }: TaskDeta
                           )}
                         </div>
 
-                        {/* Reporter */}
                         <div>
                           <div className="flex items-center gap-1.5 mb-1.5">
                             <User className="size-3 text-muted-foreground" />
@@ -322,7 +319,6 @@ export function TaskDetail({ taskId, open, onOpenChange, workspaceId }: TaskDeta
                           )}
                         </div>
 
-                        {/* Due date */}
                         <div>
                           <div className="flex items-center gap-1.5 mb-1.5">
                             <CalendarDays className="size-3 text-muted-foreground" />
@@ -339,7 +335,6 @@ export function TaskDetail({ taskId, open, onOpenChange, workspaceId }: TaskDeta
                           )}
                         </div>
 
-                        {/* Priority */}
                         <div>
                           <div className="flex items-center gap-1.5 mb-1.5">
                             <Flag className="size-3 text-muted-foreground" />
@@ -350,7 +345,6 @@ export function TaskDetail({ taskId, open, onOpenChange, workspaceId }: TaskDeta
                           <TaskPriorityBadge priority={task.priority} />
                         </div>
 
-                        {/* Labels */}
                         {task.labels && task.labels.length > 0 && (
                           <div className="col-span-2">
                             <div className="flex items-center gap-1.5 mb-1.5">
@@ -363,7 +357,7 @@ export function TaskDetail({ taskId, open, onOpenChange, workspaceId }: TaskDeta
                               {task.labels.map((label) => (
                                 <span
                                   key={label}
-                                  className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium"
+                                  className="inline-flex items-center rounded-full bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300 border border-violet-200 dark:border-violet-800 px-2.5 py-0.5 text-xs font-medium"
                                 >
                                   {label}
                                 </span>

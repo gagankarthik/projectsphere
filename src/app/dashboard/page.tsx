@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
@@ -55,8 +55,7 @@ function pickColor(id: string) {
   return COLORS[h % COLORS.length]
 }
 
-function getGreeting() {
-  const h = new Date().getHours()
+function getGreeting(h: number) {
   if (h < 12) return "Good morning"
   if (h < 17) return "Good afternoon"
   return "Good evening"
@@ -81,9 +80,13 @@ export default function DashboardPage() {
   const { user } = useAuthStore()
   const { workspaces, isLoading: wsLoading } = useWorkspaces()
   const { currentWorkspace, setCurrentWorkspace } = useWorkspaceStore()
+  const [greeting, setGreeting] = useState("Welcome")
 
   const workspaceId = currentWorkspace?.id || workspaces[0]?.id || ""
   const { projects, isLoading: projLoading } = useProjects(workspaceId)
+
+  // Client-only to avoid hydration mismatch
+  useEffect(() => { setGreeting(getGreeting(new Date().getHours())) }, [])
 
   useEffect(() => {
     if (!currentWorkspace && workspaces.length > 0) setCurrentWorkspace(workspaces[0])
@@ -118,7 +121,7 @@ export default function DashboardPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-xl md:text-2xl font-semibold text-slate-900">
-              {getGreeting()}, {firstName}
+              {greeting}, {firstName}
             </h1>
             <p className="mt-0.5 text-sm text-slate-500">
               {currentWorkspace ? currentWorkspace.name : "Set up your workspace to get started"}
