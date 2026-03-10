@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { Bell, Search, Plus } from "lucide-react"
@@ -63,40 +64,44 @@ export function DashboardHeader() {
           {/* Mobile: last 2 crumbs */}
           <span className="sm:hidden flex items-center gap-1 min-w-0">
             {mobileCrumbs.map((crumb, i) => (
-              <BreadcrumbItem key={crumb.href} className="min-w-0">
-                {i < mobileCrumbs.length - 1 ? (
-                  <>
+              i < mobileCrumbs.length - 1 ? (
+                <React.Fragment key={crumb.href}>
+                  <BreadcrumbItem className="min-w-0">
                     <BreadcrumbLink asChild>
                       <Link href={crumb.href} className="text-xs text-muted-foreground hover:text-foreground truncate max-w-[80px]">
                         {crumb.label}
                       </Link>
                     </BreadcrumbLink>
-                    <BreadcrumbSeparator />
-                  </>
-                ) : (
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                </React.Fragment>
+              ) : (
+                <BreadcrumbItem key={crumb.href} className="min-w-0">
                   <BreadcrumbPage className="text-xs font-medium truncate max-w-[100px]">{crumb.label}</BreadcrumbPage>
-                )}
-              </BreadcrumbItem>
+                </BreadcrumbItem>
+              )
             ))}
           </span>
 
           {/* Desktop: all crumbs */}
           <span className="hidden sm:flex items-center gap-1">
             {crumbs.map((crumb, i) => (
-              <BreadcrumbItem key={crumb.href}>
-                {i < crumbs.length - 1 ? (
-                  <>
+              i < crumbs.length - 1 ? (
+                <React.Fragment key={crumb.href}>
+                  <BreadcrumbItem>
                     <BreadcrumbLink asChild>
                       <Link href={crumb.href} className="text-sm text-muted-foreground hover:text-foreground">
                         {crumb.label}
                       </Link>
                     </BreadcrumbLink>
-                    <BreadcrumbSeparator />
-                  </>
-                ) : (
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                </React.Fragment>
+              ) : (
+                <BreadcrumbItem key={crumb.href}>
                   <BreadcrumbPage className="text-sm font-medium">{crumb.label}</BreadcrumbPage>
-                )}
-              </BreadcrumbItem>
+                </BreadcrumbItem>
+              )
             ))}
           </span>
         </BreadcrumbList>

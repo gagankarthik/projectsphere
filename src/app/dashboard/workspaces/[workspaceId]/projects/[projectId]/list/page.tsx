@@ -43,8 +43,8 @@ export default function ListPage({ params }: ListPageProps) {
     setTaskDetailOpen(true);
   };
 
-  const handleAddTask = (status: TaskStatus) => {
-    setDefaultCreateStatus(status);
+  const handleAddTask = (status?: TaskStatus) => {
+    setDefaultCreateStatus(status ?? "todo");
     setCreateDialogOpen(true);
   };
 

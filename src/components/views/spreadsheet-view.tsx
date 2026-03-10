@@ -77,10 +77,14 @@ function TaskRow({
   task,
   onClick,
   barColor,
+  projectKey,
+  taskIndex,
 }: {
   task: Task;
   onClick: () => void;
   barColor: string;
+  projectKey?: string;
+  taskIndex?: number;
 }) {
   const progress = getProgress(task);
   const isOverdue = task.dueDate && isPast(new Date(task.dueDate)) && task.status !== "done";
@@ -99,6 +103,11 @@ function TaskRow({
 
       {/* Task name */}
       <div className="py-2.5 pr-3 min-w-0 flex items-center gap-1.5">
+        {projectKey && taskIndex !== undefined && (
+          <span className="text-[10px] font-mono text-slate-400 shrink-0">
+            {projectKey}-{String(taskIndex + 1).padStart(3, "0")}
+          </span>
+        )}
         <span className="text-sm font-medium text-slate-800 truncate group-hover:text-blue-600 transition-colors">
           {task.title}
         </span>
@@ -169,11 +178,15 @@ function StatusSection({
   tasks,
   onTaskClick,
   onAddTask,
+  projectKey,
+  taskOffset,
 }: {
   status: TaskStatus;
   tasks: Task[];
   onTaskClick: (task: Task) => void;
-  onAddTask?: (status: TaskStatus) => void;
+  onAddTask?: (status?: TaskStatus) => void;
+  projectKey?: string;
+  taskOffset?: number;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const statusDef = TASK_STATUSES.find((s) => s.value === status)!;
@@ -214,12 +227,14 @@ function StatusSection({
               No tasks — click below to add one
             </div>
           ) : (
-            tasks.map((task) => (
+            tasks.map((task, i) => (
               <TaskRow
                 key={task.id}
                 task={task}
                 onClick={() => onTaskClick(task)}
                 barColor={cfg.bar}
+                projectKey={projectKey}
+                taskIndex={taskOffset !== undefined ? taskOffset + i : undefined}
               />
             ))
           )}
@@ -242,14 +257,21 @@ function StatusSection({
 interface SpreadsheetViewProps {
   tasks: Task[];
   onTaskClick: (task: Task) => void;
-  onAddTask?: (status: TaskStatus) => void;
+  onAddTask?: (status?: TaskStatus) => void;
+  projectKey?: string;
 }
 
-export function SpreadsheetView({ tasks, onTaskClick, onAddTask }: SpreadsheetViewProps) {
+export function SpreadsheetView({ tasks, onTaskClick, onAddTask, projectKey }: SpreadsheetViewProps) {
   const grouped = TASK_STATUS_ORDER.reduce((acc, status) => {
     acc[status] = tasks.filter((t) => t.status === status);
     return acc;
   }, {} as Record<TaskStatus, Task[]>);
+
+  // Compute offset per status group so task numbers are globally sequential
+  const statusOffsets = TASK_STATUS_ORDER.reduce((acc, status, idx) => {
+    acc[status] = TASK_STATUS_ORDER.slice(0, idx).reduce((sum, s) => sum + grouped[s].length, 0);
+    return acc;
+  }, {} as Record<TaskStatus, number>);
 
   if (tasks.length === 0) {
     return (
@@ -293,6 +315,8 @@ export function SpreadsheetView({ tasks, onTaskClick, onAddTask }: SpreadsheetVi
           tasks={grouped[status]}
           onTaskClick={onTaskClick}
           onAddTask={onAddTask}
+          projectKey={projectKey}
+          taskOffset={statusOffsets[status]}
         />
       ))}
     </div>

@@ -247,7 +247,7 @@ function NavProjects({ workspaceId }: { workspaceId: string }) {
             return (
               <SidebarMenuItem key={project.id}>
                 <SidebarMenuButton asChild isActive={active} tooltip={project.name}>
-                  <Link href={`/dashboard/workspaces/${workspaceId}/projects/${project.id}/board`}>
+                  <Link href={`/dashboard/workspaces/${workspaceId}/projects/${project.id}`}>
                     <span className={`size-2 shrink-0 rounded-full ${projectColor(project.id)}`} />
                     <span className="truncate">{project.name}</span>
                     <span className="ml-auto font-mono text-[10px] text-muted-foreground/50">
