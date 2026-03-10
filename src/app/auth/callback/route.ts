@@ -3,9 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 const CLIENT_ID = process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID!;
 const CLIENT_SECRET = process.env.NEXT_PUBLIC_COGNITO_CLIENT_SECRET!;
 const DOMAIN = process.env.NEXT_PUBLIC_COGNITO_DOMAIN!;
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
 
 export async function GET(request: NextRequest) {
-  const origin = new URL(request.url).origin;
   const { searchParams } = request.nextUrl;
 
   const code = searchParams.get("code");
@@ -13,15 +13,15 @@ export async function GET(request: NextRequest) {
   const error = searchParams.get("error");
 
   if (error) {
-    return NextResponse.redirect(`${origin}/auth/login?error=${encodeURIComponent(error)}`);
+    return NextResponse.redirect(`${APP_URL}/auth/login?error=${encodeURIComponent(error)}`);
   }
   if (!code) {
-    return NextResponse.redirect(`${origin}/auth/login?error=no_code`);
+    return NextResponse.redirect(`${APP_URL}/auth/login?error=no_code`);
   }
 
   try {
-    // Exchange code for tokens
-    const redirectUri = `${origin}/auth/callback`;
+    // Exchange code for tokens - must match exactly what was sent in authorize request
+    const redirectUri = `${APP_URL}/auth/callback`;
     const credentials = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64");
 
     const res = await fetch(`${DOMAIN}/oauth2/token`, {
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     if (!res.ok) {
       const text = await res.text();
       console.error("[auth/callback] token exchange failed:", text);
-      return NextResponse.redirect(`${origin}/auth/login?error=${encodeURIComponent(text)}`);
+      return NextResponse.redirect(`${APP_URL}/auth/login?error=${encodeURIComponent(text)}`);
     }
 
     const tokens = await res.json();
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
 
     // Redirect and set httpOnly cookies
     const redirectTo = state || "/dashboard";
-    const response = NextResponse.redirect(`${origin}${redirectTo}`);
+    const response = NextResponse.redirect(`${APP_URL}${redirectTo}`);
 
     const isProduction = process.env.NODE_ENV === "production";
     const base = { httpOnly: true, secure: isProduction, sameSite: "lax" as const, path: "/" };
@@ -106,6 +106,6 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[auth/callback] error:", msg);
-    return NextResponse.redirect(`${origin}/auth/login?error=${encodeURIComponent(msg)}`);
+    return NextResponse.redirect(`${APP_URL}/auth/login?error=${encodeURIComponent(msg)}`);
   }
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
@@ -15,14 +15,22 @@ export default function DashboardLayout({
 }) {
   const { isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
+  const [mounted, setMounted] = useState(false)
 
+  // Handle hydration - wait for client mount
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    setMounted(true)
+  }, [])
+
+  // Redirect to login if not authenticated (after loading completes)
+  useEffect(() => {
+    if (mounted && !isLoading && !isAuthenticated) {
       router.replace("/auth/login")
     }
-  }, [isAuthenticated, isLoading, router])
+  }, [isAuthenticated, isLoading, router, mounted])
 
-  if (isLoading) {
+  // Show loading during initial mount or while checking auth
+  if (!mounted || isLoading) {
     return (
       <div className="flex h-svh items-center justify-center bg-background">
         <LoadingSpinner size="lg" />
@@ -30,8 +38,13 @@ export default function DashboardLayout({
     )
   }
 
+  // User is not authenticated - will redirect
   if (!isAuthenticated) {
-    return null
+    return (
+      <div className="flex h-svh items-center justify-center bg-background">
+        <LoadingSpinner size="lg" />
+      </div>
+    )
   }
 
   return (
