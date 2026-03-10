@@ -11,7 +11,23 @@
       "Bash(rm:*)",
       "Bash(ls:*)",
       "Bash(find \"D:/Ocean blue/projectsphere/src/app/\\(auth\\)\" -type f)",
-      "Bash(cd \"D:/Ocean blue/projectsphere\" && npm run build 2>&1 | tail -20)"
+      "Bash(cd \"D:/Ocean blue/projectsphere\" && npm run build 2>&1 | tail -20)",
+      "Bash(cat \"D:/Ocean blue/projectsphere/package.json\" | python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); deps={**d.get\\('dependencies',{}\\), **d.get\\('devDependencies',{}\\)}; [print\\(k,v\\) for k in sorted\\(deps\\) if any\\(x in k for x in ['oidc','cognito','auth','next-auth']\\)]\")",
+      "Bash(cp -r \"D:/Ocean blue/projectsphere/src/app/\\(dashboard\\)\" \"D:/Ocean blue/projectsphere/src/app/dashboard\" && rm -rf \"D:/Ocean blue/projectsphere/src/app/\\(dashboard\\)\" && echo \"Done\")",
+      "Bash(cat \"D:/Ocean blue/projectsphere/src/app/api/workspaces/route.ts\" && echo \"===\" && cat \"D:/Ocean blue/projectsphere/src/app/\\(onboarding\\)/onboarding/page.tsx\" 2>/dev/null || cat \"D:/Ocean blue/projectsphere/src/app/onboarding/page.tsx\" 2>/dev/null)",
+      "Bash(cd \"D:/Ocean blue/projectsphere\" && npm install recharts --legacy-peer-deps 2>&1 | tail -5)",
+      "Bash(cd \"D:/Ocean blue/projectsphere\" && npx shadcn@latest add chart --yes 2>&1 | tail -10)",
+      "Bash(cd \"D:/Ocean blue/projectsphere\" && npx tsc --noEmit 2>&1 | head -40)",
+      "Bash(cd \"D:/Ocean blue/projectsphere\" && npm run build 2>&1 | tail -30)",
+      "Bash(find \"D:/Ocean blue/projectsphere\" -type f -name \"*.tsx\" 2>/dev/null | head -50)",
+      "Bash(cd \"D:/Ocean blue/projectsphere\" && npx tsc --noEmit 2>&1 | head -20)",
+      "Bash(cd \"D:/Ocean blue/projectsphere\" && npm run build 2>&1 | grep -E \"error|warning|Error|Warning|✓|Failed\" | head -20)",
+      "WebFetch(domain:cdn.dribbble.com)",
+      "Bash(curl -L \"https://cdn.dribbble.com/userupload/13405032/file/original-b1c5d1370e23c8c5f5a76a36add69d28.png?resize=752x&vertical=center\" -o \"/tmp/dashboard_ref.png\")",
+      "Bash(cd \"D:/Ocean blue/projectsphere\" && npx tsc --noEmit 2>&1; echo \"EXIT:$?\")",
+      "Bash(cd \"D:/Ocean blue/projectsphere\" && npm run build 2>&1 | grep -E \"Error|error|Warning|✓|Failed|✗\" | head -20)",
+      "Bash(cd \"D:/Ocean blue/projectsphere\" && npx tsc --noEmit 2>&1 | head -60)",
+      "Bash(cd \"D:/Ocean blue/projectsphere\" && npx tsc --noEmit 2>&1)"
     ]
   }
 }
