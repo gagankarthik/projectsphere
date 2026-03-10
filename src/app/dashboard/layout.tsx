@@ -1,6 +1,6 @@
 "use client"
 
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { DashboardHeader } from "@/components/layout/dashboard-header"
 
@@ -12,9 +12,11 @@ export default function DashboardLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="flex flex-col min-h-svh">
         <DashboardHeader />
-        <main className="flex-1 overflow-auto p-6 flex flex-col">{children}</main>
+        <main className="flex-1 min-h-0 overflow-auto p-4 md:p-6 flex flex-col">
+          {children}
+        </main>
       </SidebarInset>
     </SidebarProvider>
   )

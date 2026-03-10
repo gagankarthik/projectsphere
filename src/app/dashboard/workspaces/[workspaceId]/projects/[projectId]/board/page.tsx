@@ -9,7 +9,7 @@ import { TaskFilters } from "@/components/task/task-filters";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
-import { Plus, LayoutGrid } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useTasks } from "@/hooks/use-tasks";
 import { useProject } from "@/hooks/use-projects";
 import { toast } from "sonner";
@@ -32,7 +32,6 @@ export default function BoardPage({ params }: BoardPageProps) {
 
   const { project, isLoading: projectLoading } = useProject(projectId);
   const {
-    tasks,
     tasksByStatus,
     isLoading: tasksLoading,
     createTaskAsync,
@@ -65,11 +64,11 @@ export default function BoardPage({ params }: BoardPageProps) {
 
   if (projectLoading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-14 w-full" />
-        <div className="flex gap-4">
+      <div className="flex flex-col gap-4 flex-1 min-h-0">
+        <Skeleton className="h-14 w-full shrink-0" />
+        <div className="flex gap-3 overflow-x-auto">
           {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-96 w-72 shrink-0" />
+            <Skeleton key={i} className="h-96 w-64 sm:w-72 shrink-0 rounded-xl" />
           ))}
         </div>
       </div>
@@ -91,32 +90,33 @@ export default function BoardPage({ params }: BoardPageProps) {
   }
 
   return (
-    <div className="flex h-full flex-col gap-4">
-      {/* Project header with view switcher */}
+    <div className="flex flex-col gap-3 flex-1 min-h-0">
+      {/* Project header */}
       <ProjectHeader project={project} workspaceId={workspaceId} currentView="board" />
 
       {/* Toolbar */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex items-center justify-between gap-3 flex-wrap shrink-0">
         <TaskFilters
           filters={filters}
           onFiltersChange={setFilters}
           projectId={projectId}
         />
-        <Button onClick={() => handleAddTask("todo")}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Task
+        <Button size="sm" onClick={() => handleAddTask("todo")}>
+          <Plus className="mr-1.5 h-4 w-4" />
+          <span className="hidden sm:inline">New Task</span>
+          <span className="sm:hidden">New</span>
         </Button>
       </div>
 
       {/* Board */}
       {tasksLoading ? (
-        <div className="flex gap-4 overflow-x-auto">
+        <div className="flex gap-3 overflow-x-auto pb-2">
           {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-64 w-72 shrink-0 rounded-xl" />
+            <Skeleton key={i} className="h-64 w-64 sm:w-72 shrink-0 rounded-xl" />
           ))}
         </div>
       ) : (
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 min-h-0 overflow-auto">
           <KanbanBoard
             tasksByStatus={tasksByStatus}
             onTaskClick={handleTaskClick}

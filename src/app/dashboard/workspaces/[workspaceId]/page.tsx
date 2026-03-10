@@ -7,11 +7,47 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Cell,
+  RadialBarChart,
+  RadialBar,
+  PolarRadiusAxis,
+  PolarAngleAxis,
+} from "recharts";
 import { useWorkspace } from "@/hooks/use-workspaces";
 import { useProjects } from "@/hooks/use-projects";
-import { Plus, FolderKanban, Users, Settings, ArrowRight, LayoutGrid } from "lucide-react";
+import {
+  Plus,
+  FolderKanban,
+  Users,
+  Settings,
+  ArrowRight,
+  LayoutGrid,
+  TrendingUp,
+  CheckSquare,
+} from "lucide-react";
 
 const PROJECT_COLORS = [
+  "#8b5cf6", "#3b82f6", "#10b981", "#f59e0b",
+  "#ec4899", "#14b8a6", "#f97316", "#6366f1",
+];
+function getProjectColor(id: string) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  return PROJECT_COLORS[hash % PROJECT_COLORS.length];
+}
+
+const GRADIENT_COLORS = [
   "from-violet-500 to-purple-600",
   "from-blue-500 to-indigo-600",
   "from-emerald-500 to-teal-600",
@@ -19,12 +55,20 @@ const PROJECT_COLORS = [
   "from-pink-500 to-rose-600",
   "from-cyan-500 to-sky-600",
 ];
-
-function getProjectColor(id: string) {
+function getGradientColor(id: string) {
   let hash = 0;
   for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
-  return PROJECT_COLORS[hash % PROJECT_COLORS.length];
+  return GRADIENT_COLORS[hash % GRADIENT_COLORS.length];
 }
+
+const barChartConfig = {
+  tasks: { label: "Tasks", color: "#8b5cf6" },
+} satisfies ChartConfig;
+
+const radialChartConfig = {
+  active:   { label: "Active",   color: "#10b981" },
+  archived: { label: "Archived", color: "#94a3b8" },
+} satisfies ChartConfig;
 
 interface WorkspacePageProps {
   params: Promise<{ workspaceId: string }>;
@@ -37,14 +81,18 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
 
   if (workspaceLoading) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-32 w-full rounded-xl" />
-        <div className="grid gap-4 md:grid-cols-3">
-          <Skeleton className="h-28" />
-          <Skeleton className="h-28" />
-          <Skeleton className="h-28" />
+      <div className="space-y-4 md:space-y-6">
+        <Skeleton className="h-28 sm:h-32 w-full rounded-xl" />
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-3">
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24 col-span-2 md:col-span-1" />
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2">
+          <Skeleton className="h-52" />
+          <Skeleton className="h-52" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <Skeleton className="h-36" />
           <Skeleton className="h-36" />
           <Skeleton className="h-36" />
@@ -67,27 +115,44 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
     );
   }
 
+  const totalTasks = projects.reduce((sum, p) => sum + (p.taskCount ?? 0), 0);
+  const activeProjects = projects.filter((p) => p.status === "active").length;
+  const archivedProjects = projects.filter((p) => p.status === "archived").length;
+
+  const barData = projects
+    .filter((p) => (p.taskCount ?? 0) > 0)
+    .slice(0, 6)
+    .map((p, i) => ({
+      name: p.name.length > 10 ? p.name.slice(0, 10) + "…" : p.name,
+      tasks: p.taskCount ?? 0,
+      fill: PROJECT_COLORS[i % PROJECT_COLORS.length],
+    }));
+
+  const radialData = [
+    { name: "active", value: activeProjects || 0, fill: "#10b981" },
+  ];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header banner */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-violet-600 via-purple-700 to-indigo-800 p-6 text-white">
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-violet-600 via-purple-700 to-indigo-800 p-5 sm:p-6 text-white">
         <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
         <div className="absolute -bottom-4 left-1/3 h-32 w-32 rounded-full bg-white/10 blur-xl" />
-        <div className="relative flex items-start justify-between">
+        <div className="relative flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex items-center gap-2 text-purple-200 text-sm mb-1">
               <LayoutGrid className="h-4 w-4" />
               Workspace
             </div>
-            <h1 className="text-3xl font-bold">{workspace.name}</h1>
-            <p className="mt-1 text-purple-100/80 max-w-lg">
+            <h1 className="text-2xl sm:text-3xl font-bold">{workspace.name}</h1>
+            <p className="mt-1 text-purple-100/80 text-sm max-w-lg">
               {workspace.description || "No description provided for this workspace."}
             </p>
           </div>
           <Button
             variant="secondary"
             size="sm"
-            className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm"
+            className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm self-start"
             asChild
           >
             <Link href={`/dashboard/workspaces/${workspaceId}/settings`}>
@@ -99,43 +164,55 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
       </div>
 
       {/* Quick stats */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
         <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
               <FolderKanban className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Total Projects</p>
-              <p className="text-2xl font-bold">{projects.length}</p>
+              <p className="text-xs text-muted-foreground">Projects</p>
+              <p className="text-xl font-bold">{projects.length}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-950/20">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
+              <CheckSquare className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Total Tasks</p>
+              <p className="text-xl font-bold">{totalTasks}</p>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-blue-500/20 bg-blue-50/50 dark:bg-blue-950/20">
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-blue-500/10">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
               <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Team Members</p>
-              <Button variant="link" className="h-auto p-0 text-2xl font-bold text-foreground" asChild>
+              <p className="text-xs text-muted-foreground">Members</p>
+              <Button variant="link" className="h-auto p-0 text-base font-bold text-foreground" asChild>
                 <Link href={`/dashboard/workspaces/${workspaceId}/members`}>View</Link>
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-950/20">
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-500/10">
-              <Plus className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+        <Card className="border-orange-500/20 bg-orange-50/50 dark:bg-orange-950/20">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-500/10">
+              <Plus className="h-5 w-5 text-orange-600 dark:text-orange-400" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">New Project</p>
-              <Button variant="link" className="h-auto p-0 text-sm font-semibold text-emerald-600 dark:text-emerald-400" asChild>
+              <p className="text-xs text-muted-foreground">New Project</p>
+              <Button variant="link" className="h-auto p-0 text-sm font-semibold text-orange-600 dark:text-orange-400" asChild>
                 <Link href={`/dashboard/workspaces/${workspaceId}/projects/new`}>
-                  Create one →
+                  Create →
                 </Link>
               </Button>
             </div>
@@ -143,11 +220,101 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
         </Card>
       </div>
 
+      {/* Analytics charts */}
+      {!projectsLoading && projects.length > 0 && (
+        <div className="grid gap-4 md:grid-cols-2">
+          {/* Bar chart */}
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="size-4 text-violet-600" />
+                <CardTitle className="text-sm font-semibold">Tasks per Project</CardTitle>
+              </div>
+              <CardDescription className="text-xs">
+                Task count across active projects
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {barData.length === 0 ? (
+                <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
+                  Create tasks to see analytics
+                </div>
+              ) : (
+                <ChartContainer config={barChartConfig} className="h-44 w-full">
+                  <BarChart data={barData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: 11, fill: "#94a3b8" }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11, fill: "#94a3b8" }}
+                      axisLine={false}
+                      tickLine={false}
+                      allowDecimals={false}
+                    />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="tasks" radius={[4, 4, 0, 0]}>
+                      {barData.map((entry, index) => (
+                        <Cell key={index} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ChartContainer>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Project status summary */}
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <FolderKanban className="size-4 text-emerald-600" />
+                <CardTitle className="text-sm font-semibold">Project Overview</CardTitle>
+              </div>
+              <CardDescription className="text-xs">Status breakdown</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-2">
+              <div className="flex flex-col gap-3">
+                {/* Progress bar */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Active</span>
+                    <span>{activeProjects} / {projects.length}</span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-emerald-500 transition-all"
+                      style={{ width: projects.length > 0 ? `${(activeProjects / projects.length) * 100}%` : "0%" }}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div className="rounded-lg border p-3 text-center">
+                    <p className="text-2xl font-bold text-emerald-600">{activeProjects}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Active</p>
+                  </div>
+                  <div className="rounded-lg border p-3 text-center">
+                    <p className="text-2xl font-bold text-slate-500">{archivedProjects}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Archived</p>
+                  </div>
+                  <div className="rounded-lg border p-3 text-center col-span-2">
+                    <p className="text-2xl font-bold">{totalTasks}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Total tasks</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Projects section */}
       <div>
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-xl font-semibold">Projects</h2>
+            <h2 className="text-lg sm:text-xl font-semibold">Projects</h2>
             <p className="text-sm text-muted-foreground">
               {projects.length} project{projects.length !== 1 ? "s" : ""} in this workspace
             </p>
@@ -169,7 +336,7 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
         </div>
 
         {projectsLoading ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Skeleton className="h-36" />
             <Skeleton className="h-36" />
             <Skeleton className="h-36" />
@@ -189,7 +356,7 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
             }
           />
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {projects.slice(0, 6).map((project) => (
               <Link
                 key={project.id}
@@ -198,7 +365,7 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
               >
                 <Card className="h-full transition-all hover:shadow-md hover:-translate-y-0.5">
                   <CardHeader className="pb-3">
-                    <div className={`mb-3 h-1.5 w-12 rounded-full bg-gradient-to-r ${getProjectColor(project.id)}`} />
+                    <div className={`mb-3 h-1.5 w-12 rounded-full bg-gradient-to-r ${getGradientColor(project.id)}`} />
                     <div className="flex items-start justify-between gap-2">
                       <CardTitle className="text-base leading-tight group-hover:text-primary transition-colors">
                         {project.name}

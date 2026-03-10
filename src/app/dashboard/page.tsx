@@ -12,10 +12,28 @@ import {
   Kanban,
   ListTodo,
   Zap,
+  TrendingUp,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart"
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Cell,
+  PieChart,
+  Pie,
+  ResponsiveContainer,
+} from "recharts"
 import { useWorkspaces } from "@/hooks/use-workspaces"
 import { useProjects } from "@/hooks/use-projects"
 import { useWorkspaceStore } from "@/stores/workspace-store"
@@ -44,6 +62,20 @@ function getGreeting() {
   return "Good evening"
 }
 
+const BAR_COLORS = [
+  "#8b5cf6", "#3b82f6", "#10b981", "#f59e0b",
+  "#ec4899", "#14b8a6", "#f97316", "#6366f1",
+]
+
+const barChartConfig = {
+  tasks: { label: "Tasks", color: "#8b5cf6" },
+} satisfies ChartConfig
+
+const pieChartConfig = {
+  active:   { label: "Active",   color: "#10b981" },
+  archived: { label: "Archived", color: "#94a3b8" },
+} satisfies ChartConfig
+
 export default function DashboardPage() {
   const router = useRouter()
   const { user } = useAuthStore()
@@ -62,21 +94,37 @@ export default function DashboardPage() {
   const totalTasks = projects.reduce((sum, p) => sum + (p.taskCount ?? 0), 0)
   const firstName = user?.name?.split(" ")[0] ?? "there"
 
+  // Chart data
+  const barData = projects
+    .slice(0, 6)
+    .map((p, i) => ({
+      name: p.name.length > 12 ? p.name.slice(0, 12) + "…" : p.name,
+      tasks: p.taskCount ?? 0,
+      fill: BAR_COLORS[i % BAR_COLORS.length],
+    }))
+
+  const activeCount = projects.filter((p) => p.status === "active").length
+  const archivedCount = projects.filter((p) => p.status === "archived").length
+  const pieData = [
+    { name: "active",   value: activeCount,   fill: "#10b981" },
+    { name: "archived", value: archivedCount, fill: "#94a3b8" },
+  ].filter((d) => d.value > 0)
+
   return (
     <div className="min-h-full bg-slate-50/50">
-      <div className="mx-auto max-w-6xl space-y-8 p-6">
+      <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
 
         {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900">
+            <h1 className="text-xl md:text-2xl font-semibold text-slate-900">
               {getGreeting()}, {firstName}
             </h1>
             <p className="mt-0.5 text-sm text-slate-500">
               {currentWorkspace ? currentWorkspace.name : "Set up your workspace to get started"}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button variant="outline" size="sm" asChild>
               <Link href={workspaceId ? `/dashboard/workspaces/${workspaceId}/projects/new` : "/dashboard/workspaces/new"}>
                 <Plus className="mr-1.5 size-3.5" />
@@ -93,7 +141,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
           {[
             {
               label: "Workspaces",
@@ -125,12 +173,12 @@ export default function DashboardPage() {
               capitalize: true,
             },
           ].map((s) => (
-            <div key={s.label} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div key={s.label} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium uppercase tracking-wide text-slate-400">{s.label}</span>
                 <div className={`rounded-lg p-1.5 ${s.iconBg} ${s.color}`}>{s.icon}</div>
               </div>
-              <div className={`mt-3 text-2xl font-bold text-slate-900 ${s.capitalize ? "capitalize" : ""}`}>
+              <div className={`mt-2 text-2xl font-bold text-slate-900 ${s.capitalize ? "capitalize" : ""}`}>
                 {s.value === null ? <Skeleton className="h-7 w-10" /> : s.value}
               </div>
             </div>
@@ -151,6 +199,122 @@ export default function DashboardPage() {
                 Create workspace
               </Link>
             </Button>
+          </div>
+        )}
+
+        {/* Analytics charts */}
+        {workspaceId && !isLoading && projects.length > 0 && (
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Tasks per project bar chart */}
+            <Card className="border-slate-200 shadow-sm">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="size-4 text-violet-600" />
+                  <CardTitle className="text-sm font-semibold text-slate-900">Tasks by Project</CardTitle>
+                </div>
+                <CardDescription className="text-xs">
+                  Task count across your projects
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                {barData.every((d) => d.tasks === 0) ? (
+                  <div className="flex h-40 items-center justify-center text-sm text-slate-400">
+                    No tasks yet — create tasks to see analytics
+                  </div>
+                ) : (
+                  <ChartContainer config={barChartConfig} className="h-44 w-full">
+                    <BarChart data={barData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                      <XAxis
+                        dataKey="name"
+                        tick={{ fontSize: 11, fill: "#94a3b8" }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 11, fill: "#94a3b8" }}
+                        axisLine={false}
+                        tickLine={false}
+                        allowDecimals={false}
+                      />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Bar dataKey="tasks" radius={[4, 4, 0, 0]}>
+                        {barData.map((entry, index) => (
+                          <Cell key={index} fill={entry.fill} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ChartContainer>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Project status donut */}
+            <Card className="border-slate-200 shadow-sm">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <FolderKanban className="size-4 text-emerald-600" />
+                  <CardTitle className="text-sm font-semibold text-slate-900">Project Status</CardTitle>
+                </div>
+                <CardDescription className="text-xs">
+                  Active vs archived projects
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                {pieData.length === 0 ? (
+                  <div className="flex h-40 items-center justify-center text-sm text-slate-400">
+                    No projects yet
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-6">
+                    <ChartContainer config={pieChartConfig} className="h-44 w-44 shrink-0">
+                      <PieChart>
+                        <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                        <Pie
+                          data={pieData}
+                          dataKey="value"
+                          nameKey="name"
+                          innerRadius={44}
+                          outerRadius={68}
+                          paddingAngle={3}
+                        >
+                          {pieData.map((entry, index) => (
+                            <Cell key={index} fill={entry.fill} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ChartContainer>
+                    <div className="flex flex-col gap-3 text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="size-3 rounded-full bg-emerald-500 shrink-0" />
+                        <div>
+                          <p className="font-semibold text-slate-900">{activeCount}</p>
+                          <p className="text-xs text-slate-500">Active</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="size-3 rounded-full bg-slate-400 shrink-0" />
+                        <div>
+                          <p className="font-semibold text-slate-900">{archivedCount}</p>
+                          <p className="text-xs text-slate-500">Archived</p>
+                        </div>
+                      </div>
+                      <div className="border-t border-slate-100 pt-2">
+                        <p className="font-bold text-slate-900">{projects.length}</p>
+                        <p className="text-xs text-slate-500">Total</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Loading skeleton for charts */}
+        {workspaceId && isLoading && (
+          <div className="grid gap-4 md:grid-cols-2">
+            <Skeleton className="h-52 rounded-xl" />
+            <Skeleton className="h-52 rounded-xl" />
           </div>
         )}
 
