@@ -4,7 +4,7 @@ import { use, useState } from "react";
 import { ProjectHeader } from "@/components/project/project-header";
 import { KanbanBoard } from "@/components/views/kanban-board";
 import { TaskDetail } from "@/components/task/task-detail";
-import { CreateTaskDialog } from "@/components/task/create-task-dialog";
+import { CreateTaskSheet } from "@/components/task/create-task-sheet";
 import { TaskFilters } from "@/components/task/task-filters";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -139,8 +139,8 @@ export default function BoardPage({ params }: BoardPageProps) {
         />
       )}
 
-      {/* Create task dialog */}
-      <CreateTaskDialog
+      {/* Create task sheet */}
+      <CreateTaskSheet
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         onSubmit={handleCreateTask}

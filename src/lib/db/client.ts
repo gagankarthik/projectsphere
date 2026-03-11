@@ -31,4 +31,5 @@ export const TABLES = {
   TASKS:             e("NEXT_PUBLIC_DYNAMODB_TASKS_TABLE",             "projectsphere-tasks"),
   INVITATIONS:       e("NEXT_PUBLIC_DYNAMODB_INVITATIONS_TABLE",       "projectsphere-invitations"),
   FILES:             e("NEXT_PUBLIC_DYNAMODB_FILES_TABLE",             "projectsphere-files"),
+  COMMENTS:          e("NEXT_PUBLIC_DYNAMODB_COMMENTS_TABLE",          "projectsphere-comments"),
 } as const;

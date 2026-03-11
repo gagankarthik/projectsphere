@@ -7,12 +7,13 @@ interface UserAvatarProps {
   name?: string;
   email?: string;
   avatarUrl?: string;
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
   className?: string;
 }
 
 export function UserAvatar({ name, email, avatarUrl, size = "md", className }: UserAvatarProps) {
   const sizeClasses = {
+    xs: "h-5 w-5 text-[10px]",
     sm: "h-6 w-6 text-xs",
     md: "h-8 w-8 text-sm",
     lg: "h-10 w-10 text-base",

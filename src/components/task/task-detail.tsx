@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -32,6 +32,7 @@ import {
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { FileUpload, AttachmentList } from "@/components/shared/file-upload";
 import { MentionTextarea, RenderWithMentions } from "@/components/shared/mention-textarea";
 import { useTask } from "@/hooks/use-tasks";
 import { updateTaskSchema, type UpdateTaskInput } from "@/validations/task";
@@ -49,12 +50,6 @@ import {
   Paperclip,
   MessageSquare,
   FileText,
-  Image as ImageIcon,
-  File,
-  Upload,
-  Plus,
-  MoreHorizontal,
-  ExternalLink,
   Copy,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -72,17 +67,21 @@ interface TaskDetailProps {
 interface Comment {
   id: string;
   text: string;
-  author: string;
-  createdAt: Date;
+  author: {
+    id: string;
+    name: string;
+    email: string;
+    avatarUrl?: string;
+  };
+  createdAt: string;
 }
 
-interface FileItem {
+interface UploadedFile {
   id: string;
   name: string;
-  type: "image" | "document" | "other";
-  size: string;
-  uploadedAt: Date;
-  uploadedBy: string;
+  size: number;
+  mimeType: string;
+  url: string;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -125,7 +124,50 @@ function TaskDetailContent({
   const [activeTab, setActiveTab] = useState<TabType>("details");
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentText, setCommentText] = useState("");
-  const [files, setFiles] = useState<FileItem[]>([]);
+  const [attachments, setAttachments] = useState<UploadedFile[]>([]);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [isLoadingFiles, setIsLoadingFiles] = useState(false);
+  const [isAddingComment, setIsAddingComment] = useState(false);
+
+  // Fetch comments
+  useEffect(() => {
+    async function fetchComments() {
+      if (!taskId) return;
+      setIsLoadingComments(true);
+      try {
+        const res = await fetch(`/api/tasks/${taskId}/comments`);
+        if (res.ok) {
+          const data = await res.json();
+          setComments(data.data || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch comments:", err);
+      } finally {
+        setIsLoadingComments(false);
+      }
+    }
+    fetchComments();
+  }, [taskId]);
+
+  // Fetch attachments
+  useEffect(() => {
+    async function fetchAttachments() {
+      if (!taskId) return;
+      setIsLoadingFiles(true);
+      try {
+        const res = await fetch(`/api/tasks/${taskId}/files`);
+        if (res.ok) {
+          const data = await res.json();
+          setAttachments(data.data || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch attachments:", err);
+      } finally {
+        setIsLoadingFiles(false);
+      }
+    }
+    fetchAttachments();
+  }, [taskId]);
 
   const {
     register,
@@ -191,13 +233,36 @@ function TaskDetailContent({
     }
   };
 
-  const handleAddComment = () => {
+  const handleAddComment = async () => {
     if (!commentText.trim()) return;
-    setComments((prev) => [
-      ...prev,
-      { id: Date.now().toString(), text: commentText.trim(), author: "You", createdAt: new Date() },
-    ]);
-    setCommentText("");
+    setIsAddingComment(true);
+    try {
+      const res = await fetch(`/api/tasks/${taskId}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: commentText.trim() }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setComments((prev) => [...prev, data.data]);
+        setCommentText("");
+        toast.success("Comment added");
+      } else {
+        throw new Error("Failed to add comment");
+      }
+    } catch {
+      toast.error("Failed to add comment");
+    } finally {
+      setIsAddingComment(false);
+    }
+  };
+
+  const handleFileUploadComplete = (file: UploadedFile) => {
+    setAttachments((prev) => [...prev, file]);
+  };
+
+  const handleFileDelete = (fileId: string) => {
+    setAttachments((prev) => prev.filter((f) => f.id !== fileId));
   };
 
   const handleCopyLink = () => {
@@ -223,7 +288,7 @@ function TaskDetailContent({
 
   const tabs: { id: TabType; label: string; icon: React.ReactNode; count?: number }[] = [
     { id: "details", label: "Details", icon: <FileText className="size-3.5" /> },
-    { id: "files", label: "Files", icon: <Paperclip className="size-3.5" />, count: files.length },
+    { id: "files", label: "Files", icon: <Paperclip className="size-3.5" />, count: attachments.length },
     { id: "comments", label: "Comments", icon: <MessageSquare className="size-3.5" />, count: comments.length },
   ];
 
@@ -545,47 +610,20 @@ function TaskDetailContent({
           {/* Files Tab */}
           {activeTab === "files" && (
             <div className="p-4 space-y-4">
-              {/* Upload area */}
-              <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:border-indigo-300 hover:bg-indigo-50/30 transition-colors cursor-pointer group">
-                <div className="flex flex-col items-center gap-2">
-                  <div className="size-12 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-indigo-100 transition-colors">
-                    <Upload className="size-5 text-slate-400 group-hover:text-indigo-500 transition-colors" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-700">Drop files here or click to upload</p>
-                    <p className="text-xs text-slate-400 mt-0.5">PNG, JPG, PDF, DOC up to 10MB</p>
-                  </div>
+              <FileUpload
+                entityType="task"
+                entityId={taskId}
+                onUploadComplete={handleFileUploadComplete}
+              />
+              {isLoadingFiles ? (
+                <div className="flex justify-center py-4">
+                  <LoadingSpinner size="sm" />
                 </div>
-              </div>
-
-              {/* Files list */}
-              {files.length > 0 ? (
-                <div className="space-y-2">
-                  {files.map((file) => (
-                    <div key={file.id} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-white hover:border-slate-300 transition-colors">
-                      <div className={cn(
-                        "size-10 rounded-lg flex items-center justify-center",
-                        file.type === "image" ? "bg-pink-100" :
-                        file.type === "document" ? "bg-blue-100" : "bg-slate-100"
-                      )}>
-                        {file.type === "image" ? (
-                          <ImageIcon className="size-5 text-pink-600" />
-                        ) : file.type === "document" ? (
-                          <FileText className="size-5 text-blue-600" />
-                        ) : (
-                          <File className="size-5 text-slate-600" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-700 truncate">{file.name}</p>
-                        <p className="text-xs text-slate-400">{file.size} • Uploaded by {file.uploadedBy}</p>
-                      </div>
-                      <Button variant="ghost" size="icon" className="size-8 text-slate-400 hover:text-slate-600">
-                        <MoreHorizontal className="size-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+              ) : attachments.length > 0 ? (
+                <AttachmentList
+                  attachments={attachments}
+                  onDelete={handleFileDelete}
+                />
               ) : (
                 <div className="text-center py-8">
                   <Paperclip className="size-8 text-slate-200 mx-auto mb-2" />
@@ -600,47 +638,44 @@ function TaskDetailContent({
           {activeTab === "comments" && (
             <div className="p-4 space-y-4">
               {/* Comment input */}
-              <div className="flex gap-2">
-                <div className="size-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-xs font-bold shrink-0">
-                  Y
-                </div>
-                <div className="flex-1 space-y-2">
-                  <Textarea
-                    placeholder="Write a comment... Use @ to mention teammates"
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAddComment(); } }}
-                    className="text-sm min-h-[80px] resize-none"
-                    rows={3}
-                  />
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" className="size-7 text-slate-400 hover:text-slate-600">
-                        <Paperclip className="size-3.5" />
-                      </Button>
-                    </div>
-                    <Button size="sm" onClick={handleAddComment} disabled={!commentText.trim()}>
-                      <Send className="size-3.5 mr-1.5" />
-                      Comment
-                    </Button>
-                  </div>
+              <div className="space-y-2">
+                <Textarea
+                  placeholder="Write a comment... Use @ to mention teammates"
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAddComment(); } }}
+                  className="text-sm min-h-[80px] resize-none"
+                  rows={3}
+                />
+                <div className="flex justify-end">
+                  <Button size="sm" onClick={handleAddComment} disabled={!commentText.trim() || isAddingComment}>
+                    {isAddingComment ? <LoadingSpinner size="sm" className="mr-1.5" /> : <Send className="size-3.5 mr-1.5" />}
+                    Comment
+                  </Button>
                 </div>
               </div>
 
               <Separator />
 
               {/* Comments list */}
-              {comments.length > 0 ? (
+              {isLoadingComments ? (
+                <div className="flex justify-center py-4">
+                  <LoadingSpinner size="sm" />
+                </div>
+              ) : comments.length > 0 ? (
                 <div className="space-y-4">
                   {comments.map((c) => (
                     <div key={c.id} className="flex gap-3">
-                      <div className="size-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold shrink-0">
-                        {c.author[0]}
-                      </div>
+                      <UserAvatar
+                        name={c.author?.name || ""}
+                        email={c.author?.email || ""}
+                        avatarUrl={c.author?.avatarUrl}
+                        size="sm"
+                      />
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-semibold text-slate-700">{c.author}</span>
-                          <span className="text-xs text-slate-400">{format(c.createdAt, "MMM d, h:mm a")}</span>
+                          <span className="text-sm font-semibold text-slate-700">{c.author?.name || c.author?.email}</span>
+                          <span className="text-xs text-slate-400">{format(new Date(c.createdAt), "MMM d, h:mm a")}</span>
                         </div>
                         <p className="text-sm text-slate-600 leading-relaxed">{c.text}</p>
                       </div>

@@ -27,7 +27,8 @@
       "Bash(cd \"D:/Ocean blue/projectsphere\" && npx tsc --noEmit 2>&1; echo \"EXIT:$?\")",
       "Bash(cd \"D:/Ocean blue/projectsphere\" && npm run build 2>&1 | grep -E \"Error|error|Warning|✓|Failed|✗\" | head -20)",
       "Bash(cd \"D:/Ocean blue/projectsphere\" && npx tsc --noEmit 2>&1 | head -60)",
-      "Bash(cd \"D:/Ocean blue/projectsphere\" && npx tsc --noEmit 2>&1)"
+      "Bash(cd \"D:/Ocean blue/projectsphere\" && npx tsc --noEmit 2>&1)",
+      "Bash(npm run build:*)"
     ]
   }
 }
