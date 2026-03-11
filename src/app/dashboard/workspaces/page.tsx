@@ -18,7 +18,7 @@ export default function WorkspacesPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="h-28 rounded-xl bg-gradient-to-br from-violet-600 via-purple-700 to-indigo-800 animate-pulse" />
+        <div className="h-28 rounded-xl bg-[#645394] animate-pulse" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-44" />)}
         </div>
@@ -29,7 +29,7 @@ export default function WorkspacesPage() {
   return (
     <div className="space-y-6">
       {/* Hero header */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-violet-600 via-purple-700 to-indigo-800 p-5 sm:p-8 text-white">
+      <div className="relative overflow-hidden rounded-xl bg-[#645394] p-5 sm:p-8 text-white">
         <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
         <div className="absolute bottom-0 left-1/4 h-32 w-64 rounded-full bg-white/5 blur-xl" />
         <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

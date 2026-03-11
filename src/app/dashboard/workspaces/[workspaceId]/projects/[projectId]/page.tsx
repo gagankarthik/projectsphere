@@ -102,7 +102,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
     <div className="flex flex-col gap-0 -m-4 md:-m-5 min-h-full">
       {/* Project header */}
       <div className={cn("relative overflow-hidden")}>
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-blue-800 opacity-90" />
+        <div className="absolute inset-0 bg-[#645394] opacity-90" />
         <div className="relative px-5 md:px-8 pt-6 pb-0">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">

@@ -948,14 +948,14 @@ function CTASection() {
       <div className="absolute inset-0 -z-10 bg-[url('data:image/svg+xml,%3Csvg width=%2230%22 height=%2230%22 viewBox=%220 0 30 30%22 fill=%22none%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cpath d=%22M1.22676 0C1.91374 0 2.45351 0.539773 2.45351 1.22676C2.45351 1.91374 1.91374 2.45351 1.22676 2.45351C0.539773 2.45351 0 1.91374 0 1.22676C0 0.539773 0.539773 0 1.22676 0Z%22 fill=%22rgba(255,255,255,0.07)%22/%3E%3C/svg%3E')] opacity-50" />
 
       <Reveal className="mx-auto max-w-3xl px-4 sm:px-6 text-center">
-        <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-1.5 text-xs sm:text-sm font-semibold text-white">
+        <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-1.5 text-xs sm:text-sm font-semibold text-black">
           <Sparkles className="h-4 w-4" />
           Free to start — no credit card required
         </span>
-        <h2 className="mt-6 sm:mt-8 text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tighter text-white">
+        <h2 className="mt-6 sm:mt-8 text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tighter text-black">
           Your next sprint starts here.
         </h2>
-        <p className="mx-auto mt-4 sm:mt-6 max-w-lg text-base sm:text-lg text-indigo-100">
+        <p className="mx-auto mt-4 sm:mt-6 max-w-lg text-black sm:text-lg text-base">
           Join 40,000+ teams who ship faster, communicate clearer, and actually enjoy their workflow.
         </p>
         <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
@@ -972,17 +972,6 @@ function CTASection() {
           >
             View demo
           </Link>
-        </div>
-        <div className="mt-6 sm:mt-8 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-indigo-200">
-          <span className="flex items-center gap-1.5">
-            <Check className="h-4 w-4" /> SOC 2 Type II
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Check className="h-4 w-4" /> GDPR Compliant
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Check className="h-4 w-4" /> 99.98% Uptime
-          </span>
         </div>
       </Reveal>
     </section>

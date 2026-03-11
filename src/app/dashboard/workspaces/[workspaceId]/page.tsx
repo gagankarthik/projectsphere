@@ -135,7 +135,7 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Header banner */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-violet-600 via-purple-700 to-indigo-800 p-5 sm:p-6 text-white">
+      <div className="relative overflow-hidden rounded-xl bg-[#645394] p-5 sm:p-6 text-white">
         <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
         <div className="absolute -bottom-4 left-1/3 h-32 w-32 rounded-full bg-white/10 blur-xl" />
         <div className="relative flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
