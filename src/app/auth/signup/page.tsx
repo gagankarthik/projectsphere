@@ -11,7 +11,7 @@ async function signUp() {
   const params = new URLSearchParams({
     client_id: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID!,
     response_type: "code",
-    scope: "openid email profile",
+    scope: "openid email",
     redirect_uri: `${cleanAppUrl}/auth/callback`,
   });
 

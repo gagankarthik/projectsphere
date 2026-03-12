@@ -10,7 +10,7 @@ const JWKS_URL = `${COGNITO_BASE}/.well-known/jwks.json`;
 
 // Paths that bypass auth entirely
 const PUBLIC_PATHS = ["/", "/auth/login", "/auth/signup", "/auth/callback", "/auth/logout"];
-const PUBLIC_API_PATHS = ["/api/auth/session"];
+const PUBLIC_API_PATHS = ["/api/auth/me", "/api/auth/session"];
 
 let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
 function getJWKS() {
