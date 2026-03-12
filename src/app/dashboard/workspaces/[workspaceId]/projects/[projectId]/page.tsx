@@ -1,20 +1,26 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useProjects } from "@/hooks/use-projects";
 import { useTasks } from "@/hooks/use-tasks";
+import { useWorkspaceMembers } from "@/hooks/use-workspaces";
 import { TaskDetail } from "@/components/task/task-detail";
 import { CreateTaskDialog } from "@/components/task/create-task-dialog";
 import { SpreadsheetView } from "@/components/views/spreadsheet-view";
 import { KanbanBoard } from "@/components/views/kanban-board";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { FileUpload, AttachmentList } from "@/components/shared/file-upload";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuthStore } from "@/stores/auth-store";
+import { toast } from "sonner";
 import {
   LayoutGrid,
   List,
@@ -27,9 +33,35 @@ import {
   CalendarDays,
   BarChart2,
   Clock,
+  Send,
+  Loader2,
+  Download,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+
+interface UploadedFile {
+  id: string;
+  name: string;
+  size: number;
+  mimeType: string;
+  url: string;
+}
+
+interface Discussion {
+  id: string;
+  projectId: string;
+  authorId: string;
+  text: string;
+  createdAt: string;
+  author?: {
+    id: string;
+    name: string;
+    email: string;
+    avatarUrl?: string;
+  };
+}
 
 type Tab = "overview" | "tasks" | "discussions" | "members" | "files";
 
@@ -68,11 +100,93 @@ export default function ProjectPage({ params }: ProjectPageProps) {
   const [taskDetailOpen, setTaskDetailOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+
+  // Files state
+  const [files, setFiles] = useState<UploadedFile[]>([]);
+  const [filesLoading, setFilesLoading] = useState(false);
+
+  // Discussions state
+  const [discussions, setDiscussions] = useState<Discussion[]>([]);
+  const [discussionsLoading, setDiscussionsLoading] = useState(false);
+  const [newComment, setNewComment] = useState("");
+  const [postingComment, setPostingComment] = useState(false);
 
   const { projects, isLoading: projectsLoading } = useProjects(workspaceId);
   const project = projects.find((p) => p.id === projectId);
 
   const { tasks, isLoading: tasksLoading, reorderTask } = useTasks(projectId);
+  const { members, isLoading: membersLoading } = useWorkspaceMembers(workspaceId);
+
+  // Fetch project files
+  useEffect(() => {
+    async function fetchFiles() {
+      setFilesLoading(true);
+      try {
+        const res = await fetch(`/api/projects/${projectId}/attachments`);
+        if (res.ok) {
+          const { data } = await res.json();
+          setFiles(data || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch files:", err);
+      } finally {
+        setFilesLoading(false);
+      }
+    }
+    if (projectId) fetchFiles();
+  }, [projectId]);
+
+  // Fetch project discussions
+  useEffect(() => {
+    async function fetchDiscussions() {
+      setDiscussionsLoading(true);
+      try {
+        const res = await fetch(`/api/projects/${projectId}/discussions`);
+        if (res.ok) {
+          const { data } = await res.json();
+          setDiscussions(data || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch discussions:", err);
+      } finally {
+        setDiscussionsLoading(false);
+      }
+    }
+    if (projectId) fetchDiscussions();
+  }, [projectId]);
+
+  const handlePostComment = async () => {
+    if (!newComment.trim() || !user) return;
+    setPostingComment(true);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/discussions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: newComment.trim() }),
+      });
+      if (res.ok) {
+        const { data } = await res.json();
+        setDiscussions((prev) => [...prev, data]);
+        setNewComment("");
+        toast.success("Comment posted");
+      } else {
+        throw new Error("Failed to post comment");
+      }
+    } catch {
+      toast.error("Failed to post comment");
+    } finally {
+      setPostingComment(false);
+    }
+  };
+
+  const handleFileUploaded = (file: UploadedFile) => {
+    setFiles((prev) => [...prev, file]);
+  };
+
+  const handleFileDeleted = (fileId: string) => {
+    setFiles((prev) => prev.filter((f) => f.id !== fileId));
+  };
 
   const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
     { id: "overview", label: "Overview", icon: LayoutGrid },
@@ -294,29 +408,176 @@ export default function ProjectPage({ params }: ProjectPageProps) {
           </div>
         )}
 
-        {/* Discussions placeholder */}
+        {/* Discussions */}
         {activeTab === "discussions" && (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <MessageSquare className="size-12 text-slate-300 mb-3" />
-            <h3 className="text-sm font-semibold text-slate-600">Discussions coming soon</h3>
-            <p className="text-xs text-slate-400 mt-1">Team discussions and comments will appear here.</p>
+          <div className="max-w-3xl mx-auto space-y-4">
+            {/* Post new comment */}
+            <div className="bg-white rounded-xl border border-slate-200 p-4">
+              <div className="flex items-start gap-3">
+                <UserAvatar name={user?.name} email={user?.email} size="sm" />
+                <div className="flex-1">
+                  <Textarea
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Start a discussion..."
+                    className="min-h-[80px] resize-none"
+                  />
+                  <div className="flex justify-end mt-2">
+                    <Button
+                      size="sm"
+                      onClick={handlePostComment}
+                      disabled={!newComment.trim() || postingComment}
+                    >
+                      {postingComment ? (
+                        <Loader2 className="size-4 mr-1.5 animate-spin" />
+                      ) : (
+                        <Send className="size-4 mr-1.5" />
+                      )}
+                      Post
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Discussions list */}
+            {discussionsLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-24 w-full rounded-xl" />
+                ))}
+              </div>
+            ) : discussions.length === 0 ? (
+              <div className="bg-white rounded-xl border border-slate-200 p-8 text-center">
+                <MessageSquare className="size-10 text-slate-300 mx-auto mb-3" />
+                <p className="text-sm text-slate-500">No discussions yet.</p>
+                <p className="text-xs text-slate-400 mt-1">Be the first to start a conversation.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {discussions.map((discussion) => (
+                  <div key={discussion.id} className="bg-white rounded-xl border border-slate-200 p-4">
+                    <div className="flex items-start gap-3">
+                      <UserAvatar
+                        name={discussion.author?.name}
+                        email={discussion.author?.email}
+                        avatarUrl={discussion.author?.avatarUrl}
+                        size="sm"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-slate-900">
+                            {discussion.author?.name || discussion.author?.email || "Unknown"}
+                          </span>
+                          <span className="text-xs text-slate-400">
+                            {format(new Date(discussion.createdAt), "MMM d, yyyy 'at' h:mm a")}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-sm text-slate-600 whitespace-pre-wrap">
+                          {discussion.text}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {/* Members */}
         {activeTab === "members" && (
-          <div className="bg-white rounded-xl border border-slate-200 p-4">
-            <h3 className="text-sm font-semibold text-slate-700 mb-3">Team Members</h3>
-            <p className="text-xs text-slate-400">Member management coming soon.</p>
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+              <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-slate-700">
+                  Team Members ({members.length})
+                </h3>
+                <Button size="sm" variant="outline" asChild>
+                  <Link href={`/dashboard/workspaces/${workspaceId}/members`}>
+                    Manage Members
+                  </Link>
+                </Button>
+              </div>
+              {membersLoading ? (
+                <div className="p-4 space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-12 w-full" />
+                  ))}
+                </div>
+              ) : members.length === 0 ? (
+                <div className="p-8 text-center">
+                  <Users className="size-10 text-slate-300 mx-auto mb-3" />
+                  <p className="text-sm text-slate-500">No members yet.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {members.map((member) => (
+                    <div key={member.userId} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50">
+                      <UserAvatar
+                        name={member.userName}
+                        email={member.userEmail}
+                        avatarUrl={member.userAvatarUrl}
+                        size="md"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-900 truncate">
+                          {member.userName || member.userEmail}
+                        </p>
+                        <p className="text-xs text-slate-500 truncate">{member.userEmail}</p>
+                      </div>
+                      <Badge variant="secondary" className="text-xs capitalize">
+                        {member.role}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
-        {/* Files placeholder */}
+        {/* Files */}
         {activeTab === "files" && (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <FileText className="size-12 text-slate-300 mb-3" />
-            <h3 className="text-sm font-semibold text-slate-600">Files coming soon</h3>
-            <p className="text-xs text-slate-400 mt-1">Upload and share project files here.</p>
+          <div className="max-w-3xl mx-auto space-y-4">
+            {/* Upload area */}
+            <div className="bg-white rounded-xl border border-slate-200 p-4">
+              <h3 className="text-sm font-semibold text-slate-700 mb-3">Upload Files</h3>
+              <FileUpload
+                entityType="project"
+                entityId={projectId}
+                onUploadComplete={handleFileUploaded}
+              />
+            </div>
+
+            {/* Files list */}
+            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+              <div className="px-4 py-3 border-b border-slate-100">
+                <h3 className="text-sm font-semibold text-slate-700">
+                  Project Files ({files.length})
+                </h3>
+              </div>
+              {filesLoading ? (
+                <div className="p-4 space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-12 w-full" />
+                  ))}
+                </div>
+              ) : files.length === 0 ? (
+                <div className="p-8 text-center">
+                  <FileText className="size-10 text-slate-300 mx-auto mb-3" />
+                  <p className="text-sm text-slate-500">No files uploaded yet.</p>
+                  <p className="text-xs text-slate-400 mt-1">Upload files to share with your team.</p>
+                </div>
+              ) : (
+                <div className="p-4">
+                  <AttachmentList
+                    attachments={files}
+                    onDelete={handleFileDeleted}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

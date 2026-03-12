@@ -1,0 +1,48 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci
+    build:
+      commands:
+        # AWS General (server-side)
+        - echo "NEXT_AWS_REGION=$NEXT_AWS_REGION" >> .env.production
+        - echo "NEXT_AWS_ACCESS_KEY_ID=$NEXT_AWS_ACCESS_KEY_ID" >> .env.production
+        - echo "NEXT_AWS_SECRET_ACCESS_KEY=$NEXT_AWS_SECRET_ACCESS_KEY" >> .env.production
+        # Public AWS Config
+        - echo "NEXT_PUBLIC_AWS_REGION=$NEXT_PUBLIC_AWS_REGION" >> .env.production
+        # Cognito Configuration
+        - echo "NEXT_PUBLIC_COGNITO_USER_POOL_ID=$NEXT_PUBLIC_COGNITO_USER_POOL_ID" >> .env.production
+        - echo "NEXT_PUBLIC_COGNITO_CLIENT_ID=$NEXT_PUBLIC_COGNITO_CLIENT_ID" >> .env.production
+        - echo "NEXT_PUBLIC_COGNITO_DOMAIN=$NEXT_PUBLIC_COGNITO_DOMAIN" >> .env.production
+        - echo "NEXT_PUBLIC_COGNITO_CLIENT_SECRET=$NEXT_PUBLIC_COGNITO_CLIENT_SECRET" >> .env.production
+        # DynamoDB Tables
+        - echo "NEXT_PUBLIC_DYNAMODB_USERS_TABLE=$NEXT_PUBLIC_DYNAMODB_USERS_TABLE" >> .env.production
+        - echo "NEXT_PUBLIC_DYNAMODB_WORKSPACES_TABLE=$NEXT_PUBLIC_DYNAMODB_WORKSPACES_TABLE" >> .env.production
+        - echo "NEXT_PUBLIC_DYNAMODB_WORKSPACE_MEMBERS_TABLE=$NEXT_PUBLIC_DYNAMODB_WORKSPACE_MEMBERS_TABLE" >> .env.production
+        - echo "NEXT_PUBLIC_DYNAMODB_PROJECTS_TABLE=$NEXT_PUBLIC_DYNAMODB_PROJECTS_TABLE" >> .env.production
+        - echo "NEXT_PUBLIC_DYNAMODB_PROJECT_MEMBERS_TABLE=$NEXT_PUBLIC_DYNAMODB_PROJECT_MEMBERS_TABLE" >> .env.production
+        - echo "NEXT_PUBLIC_DYNAMODB_TASKS_TABLE=$NEXT_PUBLIC_DYNAMODB_TASKS_TABLE" >> .env.production
+        - echo "NEXT_PUBLIC_DYNAMODB_INVITATIONS_TABLE=$NEXT_PUBLIC_DYNAMODB_INVITATIONS_TABLE" >> .env.production
+        - echo "NEXT_PUBLIC_DYNAMODB_FILES_TABLE=$NEXT_PUBLIC_DYNAMODB_FILES_TABLE" >> .env.production
+        - echo "NEXT_PUBLIC_DYNAMODB_COMMENTS_TABLE=$NEXT_PUBLIC_DYNAMODB_COMMENTS_TABLE" >> .env.production
+        # S3 Configuration
+        - echo "NEXT_PUBLIC_AWS_S3_BUCKET_NAME=$NEXT_PUBLIC_AWS_S3_BUCKET_NAME" >> .env.production
+        - echo "NEXT_PUBLIC_AWS_S3_REGION=$NEXT_PUBLIC_AWS_S3_REGION" >> .env.production
+        # App URL
+        - echo "NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL" >> .env.production
+        # AWS SES/SMTP
+        - echo "NEXT_AWS_STMP=$NEXT_AWS_STMP" >> .env.production
+        - echo "NEXT_AWS_STMP_PASSWORD=$NEXT_AWS_STMP_PASSWORD" >> .env.production
+        - echo "NEXT_AWS_STMP_IAM_USERNAME=$NEXT_AWS_STMP_IAM_USERNAME" >> .env.production
+        - echo "NEXT_AWS_SES_FROM_EMAIL=$NEXT_AWS_SES_FROM_EMAIL" >> .env.production
+        - npm run build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - .next/cache/**/*

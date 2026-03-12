@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useQueries } from "@tanstack/react-query"
 import {
   FolderKanban,
   CheckSquare,
@@ -13,11 +14,19 @@ import {
   ListTodo,
   Zap,
   TrendingUp,
+  Filter,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   ChartConfig,
   ChartContainer,
@@ -35,9 +44,9 @@ import {
   ResponsiveContainer,
 } from "recharts"
 import { useWorkspaces } from "@/hooks/use-workspaces"
-import { useProjects } from "@/hooks/use-projects"
 import { useWorkspaceStore } from "@/stores/workspace-store"
 import { useAuthStore } from "@/stores/auth-store"
+import type { Project } from "@/types/project"
 
 const COLORS = [
   { bg: "bg-violet-50",  text: "text-violet-700",  icon: "bg-violet-100"  },
@@ -75,15 +84,47 @@ const pieChartConfig = {
   archived: { label: "Archived", color: "#94a3b8" },
 } satisfies ChartConfig
 
+type ProjectWithWorkspace = Project & { workspaceId: string; workspaceName: string }
+
 export default function DashboardPage() {
   const router = useRouter()
   const { user } = useAuthStore()
   const { workspaces, isLoading: wsLoading } = useWorkspaces()
   const { currentWorkspace, setCurrentWorkspace } = useWorkspaceStore()
   const [greeting, setGreeting] = useState("Welcome")
+  const [selectedWorkspaceFilter, setSelectedWorkspaceFilter] = useState<string>("all")
 
-  const workspaceId = currentWorkspace?.id || workspaces[0]?.id || ""
-  const { projects, isLoading: projLoading } = useProjects(workspaceId)
+  // Fetch projects from all workspaces
+  const projectQueries = useQueries({
+    queries: workspaces.map((ws) => ({
+      queryKey: ["projects", ws.id],
+      queryFn: async () => {
+        const res = await fetch(`/api/workspaces/${ws.id}/projects`)
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error?.message || "Failed to fetch projects")
+        return (data.data as Project[]).map((p) => ({
+          ...p,
+          workspaceId: ws.id,
+          workspaceName: ws.name,
+        }))
+      },
+      enabled: workspaces.length > 0,
+      staleTime: 5 * 60 * 1000,
+    })),
+  })
+
+  const projLoading = projectQueries.some((q) => q.isLoading)
+  const allProjects: ProjectWithWorkspace[] = projectQueries.flatMap((q) => q.data ?? [])
+
+  // Filter projects by selected workspace
+  const projects = useMemo(() => {
+    if (selectedWorkspaceFilter === "all") return allProjects
+    return allProjects.filter((p) => p.workspaceId === selectedWorkspaceFilter)
+  }, [allProjects, selectedWorkspaceFilter])
+
+  const workspaceId = selectedWorkspaceFilter !== "all"
+    ? selectedWorkspaceFilter
+    : currentWorkspace?.id || workspaces[0]?.id || ""
 
   // Client-only to avoid hydration mismatch
   useEffect(() => { setGreeting(getGreeting(new Date().getHours())) }, [])
@@ -124,10 +165,32 @@ export default function DashboardPage() {
               {greeting}, {firstName}
             </h1>
             <p className="mt-0.5 text-sm text-slate-500">
-              {currentWorkspace ? currentWorkspace.name : "Set up your workspace to get started"}
+              {selectedWorkspaceFilter === "all"
+                ? `${allProjects.length} projects across ${workspaces.length} workspaces`
+                : workspaces.find(w => w.id === selectedWorkspaceFilter)?.name || "Select a workspace"}
             </p>
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap items-center">
+            {/* Workspace Filter */}
+            <Select value={selectedWorkspaceFilter} onValueChange={setSelectedWorkspaceFilter}>
+              <SelectTrigger className="w-40 h-9 text-sm bg-white border-slate-200">
+                <Filter className="size-3.5 mr-1.5 text-slate-400" />
+                <SelectValue placeholder="Filter workspace" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Workspaces</SelectItem>
+                {workspaces.map((ws) => (
+                  <SelectItem key={ws.id} value={ws.id}>
+                    <span className="flex items-center gap-2">
+                      <span className="flex size-5 shrink-0 items-center justify-center rounded bg-indigo-600 text-[9px] font-bold text-white">
+                        {ws.name.slice(0, 2).toUpperCase()}
+                      </span>
+                      <span className="truncate">{ws.name}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button variant="outline" size="sm" asChild>
               <Link href={workspaceId ? `/dashboard/workspaces/${workspaceId}/projects/new` : "/dashboard/workspaces/new"}>
                 <Plus className="mr-1.5 size-3.5" />
@@ -328,13 +391,17 @@ export default function DashboardPage() {
             {/* Projects — 2/3 */}
             <div className="lg:col-span-2 space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-slate-900">Projects</h2>
-                <Link
-                  href={`/dashboard/workspaces/${workspaceId}/projects`}
-                  className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-700"
-                >
-                  View all <ArrowRight className="size-3" />
-                </Link>
+                <h2 className="text-sm font-semibold text-slate-900">
+                  Projects {selectedWorkspaceFilter === "all" ? "(All Workspaces)" : ""}
+                </h2>
+                {selectedWorkspaceFilter !== "all" && (
+                  <Link
+                    href={`/dashboard/workspaces/${workspaceId}/projects`}
+                    className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-700"
+                  >
+                    View all <ArrowRight className="size-3" />
+                  </Link>
+                )}
               </div>
 
               {projLoading ? (
@@ -344,22 +411,30 @@ export default function DashboardPage() {
               ) : projects.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
                   <Kanban className="mx-auto mb-3 size-7 text-slate-300" />
-                  <p className="text-sm text-slate-500">No projects yet.</p>
-                  <Button size="sm" className="mt-4" asChild>
-                    <Link href={`/dashboard/workspaces/${workspaceId}/projects/new`}>
-                      <Plus className="mr-1.5 size-3.5" />
-                      Create project
-                    </Link>
-                  </Button>
+                  <p className="text-sm text-slate-500">
+                    {selectedWorkspaceFilter === "all"
+                      ? "No projects in any workspace yet."
+                      : "No projects in this workspace yet."}
+                  </p>
+                  {workspaceId && (
+                    <Button size="sm" className="mt-4" asChild>
+                      <Link href={`/dashboard/workspaces/${workspaceId}/projects/new`}>
+                        <Plus className="mr-1.5 size-3.5" />
+                        Create project
+                      </Link>
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2">
                   {projects.slice(0, 6).map((project) => {
                     const c = pickColor(project.id)
+                    const projWsId = (project as ProjectWithWorkspace).workspaceId || workspaceId
+                    const projWsName = (project as ProjectWithWorkspace).workspaceName
                     return (
                       <Link
                         key={project.id}
-                        href={`/dashboard/workspaces/${workspaceId}/projects/${project.id}/board`}
+                        href={`/dashboard/workspaces/${projWsId}/projects/${project.id}/board`}
                         className="group rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:border-slate-300 hover:shadow-md"
                       >
                         <div className="flex items-start gap-3">
@@ -370,7 +445,14 @@ export default function DashboardPage() {
                             <p className="truncate text-sm font-semibold text-slate-900 group-hover:text-indigo-600">
                               {project.name}
                             </p>
-                            <p className="mt-0.5 font-mono text-xs text-slate-400">{project.key}</p>
+                            <div className="mt-0.5 flex items-center gap-2">
+                              <span className="font-mono text-xs text-slate-400">{project.key}</span>
+                              {selectedWorkspaceFilter === "all" && projWsName && (
+                                <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded truncate max-w-24">
+                                  {projWsName}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                         <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
@@ -402,43 +484,45 @@ export default function DashboardPage() {
             {/* Sidebar — 1/3 */}
             <div className="space-y-6">
               {/* Quick links */}
-              <div className="space-y-3">
-                <h2 className="text-sm font-semibold text-slate-900">Quick links</h2>
-                <div className="space-y-1.5">
-                  {[
-                    {
-                      label: "Board",
-                      icon: <Kanban className="size-4 text-violet-500" />,
-                      href: projects[0] ? `/dashboard/workspaces/${workspaceId}/projects/${projects[0].id}/board` : "#",
-                    },
-                    {
-                      label: "List",
-                      icon: <ListTodo className="size-4 text-blue-500" />,
-                      href: projects[0] ? `/dashboard/workspaces/${workspaceId}/projects/${projects[0].id}/list` : "#",
-                    },
-                    {
-                      label: "Members",
-                      icon: <Users className="size-4 text-emerald-500" />,
-                      href: `/dashboard/workspaces/${workspaceId}/members`,
-                    },
-                    {
-                      label: "Settings",
-                      icon: <Zap className="size-4 text-orange-500" />,
-                      href: `/dashboard/workspaces/${workspaceId}/settings`,
-                    },
-                  ].map((a) => (
-                    <Link
-                      key={a.label}
-                      href={a.href}
-                      className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-900"
-                    >
-                      {a.icon}
-                      {a.label}
-                      <ArrowRight className="ml-auto size-3.5 text-slate-300" />
-                    </Link>
-                  ))}
+              {workspaceId && (
+                <div className="space-y-3">
+                  <h2 className="text-sm font-semibold text-slate-900">Quick links</h2>
+                  <div className="space-y-1.5">
+                    {[
+                      {
+                        label: "All Tasks",
+                        icon: <CheckSquare className="size-4 text-violet-500" />,
+                        href: `/dashboard/workspaces/${workspaceId}/tasks`,
+                      },
+                      {
+                        label: "All Projects",
+                        icon: <FolderKanban className="size-4 text-blue-500" />,
+                        href: `/dashboard/workspaces/${workspaceId}/projects`,
+                      },
+                      {
+                        label: "Members",
+                        icon: <Users className="size-4 text-emerald-500" />,
+                        href: `/dashboard/workspaces/${workspaceId}/members`,
+                      },
+                      {
+                        label: "Settings",
+                        icon: <Zap className="size-4 text-orange-500" />,
+                        href: `/dashboard/workspaces/${workspaceId}/settings`,
+                      },
+                    ].map((a) => (
+                      <Link
+                        key={a.label}
+                        href={a.href}
+                        className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-900"
+                      >
+                        {a.icon}
+                        {a.label}
+                        <ArrowRight className="ml-auto size-3.5 text-slate-300" />
+                      </Link>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Workspaces */}
               {workspaces.length > 0 && (
