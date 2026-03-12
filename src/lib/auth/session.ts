@@ -94,8 +94,10 @@ export async function getCurrentUserFromRequest(request: Request): Promise<AuthU
 }
 
 export function tokenPayloadToUser(payload: JWTPayload): AuthUser {
+  // Always use payload.sub (Cognito sub) as the user ID
+  // This matches how users are stored in the database via getOrCreateUser
   return {
-    id: payload["custom:userId"] || payload.sub,
+    id: payload.sub,
     email: payload.email,
     name: payload.name || payload.email.split("@")[0],
   };

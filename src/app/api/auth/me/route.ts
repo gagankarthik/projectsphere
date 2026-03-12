@@ -12,10 +12,28 @@ export async function GET(request: NextRequest) {
     }
 
     // Get full user data from database
-    const user = await getUserById(authUser.id);
+    let user;
+    try {
+      user = await getUserById(authUser.id);
+    } catch (dbError) {
+      console.error("[api/auth/me] Database error fetching user:", dbError);
+      // Return basic user info from token if DB lookup fails
+      return successResponse({
+        id: authUser.id,
+        email: authUser.email,
+        name: authUser.name,
+        avatarUrl: undefined,
+      });
+    }
 
     if (!user) {
-      return successResponse(null);
+      // User exists in Cognito but not in DB - return token info
+      return successResponse({
+        id: authUser.id,
+        email: authUser.email,
+        name: authUser.name,
+        avatarUrl: undefined,
+      });
     }
 
     return successResponse({
