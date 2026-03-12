@@ -29,7 +29,7 @@ const securityHeaders = [
       "font-src 'self' https://fonts.gstatic.com",
       "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
       "img-src 'self' data: blob: https://*.amazonaws.com https://*.s3.amazonaws.com",
-      "connect-src 'self' https://*.amazonaws.com https://cognito-idp.*.amazonaws.com",
+      "connect-src 'self' https://*.amazonaws.com https://cognito-idp.us-east-2.amazonaws.com",
       "frame-ancestors 'self'",
       "base-uri 'self'",
       "form-action 'self'",
