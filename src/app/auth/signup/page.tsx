@@ -4,11 +4,15 @@ import { redirect } from "next/navigation";
 
 async function signUp() {
   "use server";
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const cleanAppUrl = appUrl.endsWith("/") ? appUrl.slice(0, -1) : appUrl;
+
   const params = new URLSearchParams({
     client_id: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID!,
     response_type: "code",
-    scope: "openid email",
-    redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+    scope: "openid email profile",
+    redirect_uri: `${cleanAppUrl}/auth/callback`,
   });
 
   redirect(`${process.env.NEXT_PUBLIC_COGNITO_DOMAIN}/signup?${params}`);
