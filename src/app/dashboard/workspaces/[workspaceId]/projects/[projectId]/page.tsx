@@ -515,16 +515,16 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                   {members.map((member) => (
                     <div key={member.userId} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50">
                       <UserAvatar
-                        name={member.userName}
-                        email={member.userEmail}
-                        avatarUrl={member.userAvatarUrl}
+                        name={member.user?.name}
+                        email={member.user?.email}
+                        avatarUrl={member.user?.avatarUrl}
                         size="md"
                       />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-slate-900 truncate">
-                          {member.userName || member.userEmail}
+                          {member.user?.name || member.user?.email}
                         </p>
-                        <p className="text-xs text-slate-500 truncate">{member.userEmail}</p>
+                        <p className="text-xs text-slate-500 truncate">{member.user?.email}</p>
                       </div>
                       <Badge variant="secondary" className="text-xs capitalize">
                         {member.role}
