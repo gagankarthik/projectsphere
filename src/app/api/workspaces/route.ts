@@ -25,7 +25,9 @@ async function resolveUser() {
 export async function GET(request: NextRequest) {
   try {
     const user = await resolveUser();
+    console.log("[GET /api/workspaces] Fetching workspaces for userId:", user.id);
     const workspaces = await getUserWorkspaces(user.id);
+    console.log("[GET /api/workspaces] Found workspaces:", workspaces.length);
     return successResponse(workspaces);
   } catch (error) {
     console.error("[GET /api/workspaces]", error);

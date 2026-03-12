@@ -54,19 +54,31 @@ export async function deleteWorkspace(workspaceId: string): Promise<void> {
 }
 
 export async function getUserWorkspaces(userId: string): Promise<WorkspaceWithRole[]> {
-  const { Items = [] } = await dynamodb.send(new QueryCommand({
-    TableName: TM,
-    IndexName: "userId-index",
-    KeyConditionExpression: "userId = :u",
-    ExpressionAttributeValues: { ":u": userId },
-  }));
+  try {
+    console.log("[getUserWorkspaces] Querying for userId:", userId);
+    const { Items = [] } = await dynamodb.send(new QueryCommand({
+      TableName: TM,
+      IndexName: "userId-index",
+      KeyConditionExpression: "userId = :u",
+      ExpressionAttributeValues: { ":u": userId },
+    }));
+    console.log("[getUserWorkspaces] Found memberships:", Items.length);
 
-  const results: WorkspaceWithRole[] = [];
-  for (const item of Items) {
-    const ws = await getWorkspaceById(item.workspaceId as string);
-    if (ws) results.push({ ...ws, role: item.role as WorkspaceRole });
+    const results: WorkspaceWithRole[] = [];
+    for (const item of Items) {
+      const ws = await getWorkspaceById(item.workspaceId as string);
+      if (ws) results.push({ ...ws, role: item.role as WorkspaceRole });
+    }
+    return results;
+  } catch (error: unknown) {
+    // Check if it's a GSI not found error
+    const err = error as { name?: string; message?: string };
+    if (err.name === "ValidationException" && err.message?.includes("userId-index")) {
+      console.error("[getUserWorkspaces] GSI 'userId-index' not found on table. Please create it in AWS DynamoDB console.");
+    }
+    console.error("[getUserWorkspaces] Error querying workspaces:", error);
+    throw error;
   }
-  return results;
 }
 
 export async function getWorkspaceMembers(workspaceId: string): Promise<WorkspaceMember[]> {

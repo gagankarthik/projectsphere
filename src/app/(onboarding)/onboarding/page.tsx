@@ -213,7 +213,7 @@ export default function OnboardingPage() {
               <div className="space-y-2">
                 <Label htmlFor="slug">URL slug *</Label>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground shrink-0">projectsphere.app/</span>
+                  <span className="text-sm text-muted-foreground shrink-0">projectsphere.blue-qi.ai/</span>
                   <Input
                     id="slug"
                     placeholder="acme-corp"
