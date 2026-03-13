@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { useAuthStore } from "@/stores/auth-store";
 import { Layers, CheckCircle2, XCircle, Users, Shield } from "lucide-react";
+import Image from "next/image";
 
 interface InviteInfo {
   workspaceName: string;
@@ -77,10 +78,9 @@ export default function JoinPage({ params }: JoinPageProps) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-violet-50 via-white to-indigo-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-violet-950 p-6">
       <Link href="/" className="mb-8 flex items-center gap-2">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-          <Layers className="h-5 w-5 text-primary-foreground" />
+        <div className="flex h-10 w-10 items-center justify-center">
+          <Image src="/logo.svg" alt="ProjectSphere Logo" className="h-6 w-6" />
         </div>
-        <span className="text-xl font-bold">ProjectSphere</span>
       </Link>
 
       <div className="w-full max-w-md rounded-2xl border bg-card p-8 shadow-xl">

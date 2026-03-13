@@ -15,6 +15,7 @@ import {
   BadgeCheck,
   Bell,
   FolderKanban,
+  SquareDashedBottom,
 } from "lucide-react"
 
 import {
@@ -168,7 +169,7 @@ function NavMain({ workspaceId }: { workspaceId: string }) {
   const pathname = usePathname()
 
   const items = [
-                                                      
+    { label: "Dashboard", href: "/dashboard", icon: SquareDashedBottom },                                                 
     { label: "Overview", href: workspaceId ? `/dashboard/workspaces/${workspaceId}` : "/dashboard/workspaces", icon: LayoutDashboard },
     { label: "All Tasks",href: workspaceId ? `/dashboard/workspaces/${workspaceId}/tasks` : "#", icon: CheckSquare },
     { label: "Members",  href: workspaceId ? `/dashboard/workspaces/${workspaceId}/members` : "#", icon: Users },
