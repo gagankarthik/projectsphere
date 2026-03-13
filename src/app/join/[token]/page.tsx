@@ -48,7 +48,7 @@ export default function JoinPage({ params }: JoinPageProps) {
 
   const handleAccept = async () => {
     if (!isAuthenticated) {
-      router.push(`/login?redirect=/join/${token}`);
+      router.push(`/auth/login?redirect=/join/${token}`);
       return;
     }
     try {
@@ -176,7 +176,7 @@ export default function JoinPage({ params }: JoinPageProps) {
               </Button>
               {!isAuthenticated && (
                 <Button variant="outline" className="w-full" asChild>
-                  <Link href={`/register?email=${encodeURIComponent(invite.email)}&redirect=/join/${token}`}>
+                  <Link href={`/auth/signup?email=${encodeURIComponent(invite.email)}&redirect=/join/${token}`}>
                     Create account instead
                   </Link>
                 </Button>
