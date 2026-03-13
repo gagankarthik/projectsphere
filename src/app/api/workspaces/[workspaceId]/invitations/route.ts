@@ -96,7 +96,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         token: invitation.token,
       });
     } catch (emailErr) {
-      console.warn("Failed to send invitation email:", emailErr);
+      console.error("Failed to send invitation email:", emailErr);
     }
 
     return createdResponse(invitation);

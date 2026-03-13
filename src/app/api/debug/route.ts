@@ -13,6 +13,10 @@ export async function GET(request: NextRequest) {
     cognitoUserPoolId: process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID || "(not set)",
     cognitoClientId: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID ? "set" : "(not set)",
     appUrl: process.env.NEXT_PUBLIC_APP_URL || "(not set)",
+    // SES debugging
+    hasSesSmtp: !!process.env.NEXT_PUBLIC_AWS_SMTP,
+    hasSesSmtpPassword: !!process.env.NEXT_PUBLIC_AWS_SMTP_PASSWORD,
+    sesFromEmail: process.env.NEXT_PUBLIC_AWS_SES_FROM_EMAIL || "(not set)",
   };
 
   return NextResponse.json({

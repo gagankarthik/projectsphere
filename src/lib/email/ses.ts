@@ -22,6 +22,15 @@ export async function sendInvitationEmail(opts: {
 }): Promise<void> {
   const inviteUrl = `${APP_URL}/join/${opts.token}`;
 
+  console.log("Sending invitation email:", {
+    to: opts.to,
+    from: FROM_EMAIL,
+    appUrl: APP_URL,
+    inviteUrl,
+    hasSmtpUser: !!process.env.NEXT_PUBLIC_AWS_SMTP,
+    hasSmtpPassword: !!process.env.NEXT_PUBLIC_AWS_SMTP_PASSWORD,
+  });
+
   const html = `
 <!DOCTYPE html>
 <html>
@@ -83,6 +92,8 @@ export async function sendInvitationEmail(opts: {
     html,
     text: `${opts.invitedByName} invited you to join ${opts.workspaceName} as a ${opts.role}.\n\nAccept your invitation: ${inviteUrl}\n\nThis invite expires in 7 days.`,
   });
+
+  console.log("Invitation email sent successfully to:", opts.to);
 }
 
 export async function sendWelcomeEmail(opts: {
