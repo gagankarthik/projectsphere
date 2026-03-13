@@ -66,7 +66,26 @@ export async function createTask(projectId: string, input: TaskCreateInput, repo
   }));
   const order = existing.length > 0 ? ((existing[0].order as number) ?? 0) + 1 : 0;
 
-  const item = { taskId, projectId, workspaceId: project.workspaceId, title: input.title, description: input.description, status, priority, assigneeId: input.assigneeId, reporterId, dueDate: input.dueDate, labels: input.labels || [], parentTaskId: input.parentTaskId, order, createdAt: now, updatedAt: now };
+  const item: Record<string, unknown> = {
+    taskId,
+    projectId,
+    workspaceId: project.workspaceId,
+    title: input.title,
+    status,
+    priority,
+    reporterId,
+    labels: input.labels || [],
+    order,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  // Only add optional fields if they have non-empty values (DynamoDB GSIs reject empty strings)
+  if (input.description) item.description = input.description;
+  if (input.assigneeId) item.assigneeId = input.assigneeId;
+  if (input.dueDate) item.dueDate = input.dueDate;
+  if (input.parentTaskId) item.parentTaskId = input.parentTaskId;
+
   await dynamodb.send(new PutCommand({ TableName: T, Item: item }));
   await incrementProjectTaskCount(projectId);
   return enrichTask(toTask(item));
@@ -109,7 +128,14 @@ export async function getTasksByStatus(projectId: string, status: TaskStatus): P
 
 export async function updateTask(taskId: string, input: TaskUpdateInput): Promise<Task | null> {
   if (!(await getTaskById(taskId))) return null;
-  const fields = { ...input, updatedAt: new Date().toISOString() };
+
+  // Filter out empty strings for GSI key attributes
+  const cleanInput = { ...input };
+  if (cleanInput.assigneeId === "") delete cleanInput.assigneeId;
+  if (cleanInput.description === "") delete cleanInput.description;
+  if (cleanInput.dueDate === "") delete cleanInput.dueDate;
+
+  const fields = { ...cleanInput, updatedAt: new Date().toISOString() };
   const names: Record<string, string> = {};
   const values: Record<string, unknown> = {};
   const exprs = Object.entries(fields).map(([k, v], i) => { names[`#a${i}`] = k; values[`:v${i}`] = v; return `#a${i} = :v${i}`; });
