@@ -107,6 +107,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     return createdResponse(task);
   } catch (error) {
+    console.error("[POST /api/projects/tasks] Error creating task:", error);
     return errorResponse(error);
   }
 }
