@@ -5,12 +5,12 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false,
   auth: {
-    user: process.env.NEXT_AWS_STMP ?? "",
-    pass: process.env.NEXT_AWS_STMP_PASSWORD ?? "",
+    user: process.env.NEXT_PUBLIC_AWS_SMTP ?? "",
+    pass: process.env.NEXT_PUBLIC_AWS_SMTP_PASSWORD ?? "",
   },
 });
 
-const FROM_EMAIL = process.env.NEXT_AWS_SES_FROM_EMAIL ?? "noreply@projectsphere.app";
+const FROM_EMAIL = process.env.NEXT_PUBLIC_AWS_SES_FROM_EMAIL ?? "noreply@projectsphere.app";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 export async function sendInvitationEmail(opts: {

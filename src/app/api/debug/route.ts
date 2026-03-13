@@ -3,10 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 // Temporary debug endpoint - REMOVE after debugging
 export async function GET(request: NextRequest) {
   const config = {
-    hasAwsRegion: !!process.env.NEXT_AWS_REGION,
-    hasAwsAccessKey: !!process.env.NEXT_AWS_ACCESS_KEY_ID,
-    hasAwsSecretKey: !!process.env.NEXT_AWS_SECRET_ACCESS_KEY,
-    awsRegion: process.env.NEXT_AWS_REGION || "(not set)",
+    hasAwsRegion: !!process.env.NEXT_PUBLIC_AWS_REGION,
+    hasAwsAccessKey: !!process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID,
+    hasAwsSecretKey: !!process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY,
+    awsRegion: process.env.NEXT_PUBLIC_AWS_REGION || "(not set)",
     usersTable: process.env.NEXT_PUBLIC_DYNAMODB_USERS_TABLE || "(not set)",
     workspacesTable: process.env.NEXT_PUBLIC_DYNAMODB_WORKSPACES_TABLE || "(not set)",
     workspaceMembersTable: process.env.NEXT_PUBLIC_DYNAMODB_WORKSPACE_MEMBERS_TABLE || "(not set)",
