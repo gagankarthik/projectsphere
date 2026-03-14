@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getUserById } from "@/lib/db/entities/user";
 import { getUserWorkspaceRole } from "@/lib/db/entities/workspace";
-import { revokeInvitation } from "@/lib/db/entities/invitation";
+import { revokeInvitation, deleteInvitation } from "@/lib/db/entities/invitation";
 import { successResponse, noContentResponse, errorResponse } from "@/lib/api/response";
 import { UnauthorizedError, ForbiddenError, NotFoundError } from "@/lib/api/errors";
 
@@ -11,9 +11,12 @@ interface RouteParams {
 }
 
 // DELETE /api/workspaces/[workspaceId]/invitations/[inviteId]
+// Query params: ?action=delete to permanently delete, otherwise revokes
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { workspaceId, inviteId } = await params;
+    const { searchParams } = new URL(request.url);
+    const action = searchParams.get("action");
 
     const authUser = await getCurrentUser();
     if (!authUser) throw new UnauthorizedError();
@@ -25,7 +28,11 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     if (!role) throw new ForbiddenError("Access denied");
     if (role === "viewer" || role === "member") throw new ForbiddenError("Insufficient permissions");
 
-    await revokeInvitation(inviteId);
+    if (action === "delete") {
+      await deleteInvitation(inviteId);
+    } else {
+      await revokeInvitation(inviteId);
+    }
     return noContentResponse();
   } catch (error) {
     return errorResponse(error);

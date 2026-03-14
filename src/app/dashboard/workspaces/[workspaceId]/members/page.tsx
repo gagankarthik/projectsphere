@@ -11,7 +11,7 @@ import { AddMemberDialog } from "@/components/workspace/add-member-dialog";
 import { useWorkspace, useWorkspaceMembers } from "@/hooks/use-workspaces";
 import { useAuthStore } from "@/stores/auth-store";
 import { canManageWorkspaceMembers } from "@/constants/roles";
-import { Plus, Mail, Clock, CheckCircle2, XCircle, Users } from "lucide-react";
+import { Plus, Mail, Clock, CheckCircle2, XCircle, Users, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import type { WorkspaceRole } from "@/types/workspace";
@@ -70,7 +70,13 @@ export default function MembersPage({ params }: MembersPageProps) {
     const json = await res.json();
     if (!res.ok) throw new Error(json.error?.message ?? "Failed to send invitation");
     setInvitations((prev) => [json.data, ...prev]);
-    toast.success(`Invitation sent to ${data.email}`);
+    if (json.data.emailSent) {
+      toast.success(`Invitation sent to ${data.email}`);
+    } else {
+      toast.warning(`Invitation created but email failed to send: ${json.data.emailError || "Unknown error"}`, {
+        duration: 8000,
+      });
+    }
   };
 
   const handleUpdateRole = (memberId: string, role: WorkspaceRole) => {
@@ -90,6 +96,16 @@ export default function MembersPage({ params }: MembersPageProps) {
     if (res.ok) {
       setInvitations((prev) => prev.filter((i) => i.id !== inviteId));
       toast.success("Invitation revoked");
+    }
+  };
+
+  const handleDeleteInvite = async (inviteId: string) => {
+    const res = await fetch(`/api/workspaces/${workspaceId}/invitations/${inviteId}?action=delete`, {
+      method: "DELETE",
+    });
+    if (res.ok) {
+      setInvitations((prev) => prev.filter((i) => i.id !== inviteId));
+      toast.success("Invitation deleted");
     }
   };
 
@@ -233,6 +249,15 @@ export default function MembersPage({ params }: MembersPageProps) {
                               Revoke
                             </Button>
                           )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                            onClick={() => handleDeleteInvite(invite.id)}
+                            title="Delete invitation"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     ))}

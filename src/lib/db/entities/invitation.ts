@@ -76,3 +76,8 @@ export async function acceptInvitation(invitation: Invitation): Promise<void> {
 export async function revokeInvitation(invitationId: string): Promise<void> {
   await dynamodb.send(new UpdateCommand({ TableName: T, Key: { invitationId }, UpdateExpression: "SET #s = :s, updatedAt = :u", ExpressionAttributeNames: { "#s": "status" }, ExpressionAttributeValues: { ":s": "revoked", ":u": new Date().toISOString() } }));
 }
+
+export async function deleteInvitation(invitationId: string): Promise<void> {
+  const { DeleteCommand } = await import("@aws-sdk/lib-dynamodb");
+  await dynamodb.send(new DeleteCommand({ TableName: T, Key: { invitationId } }));
+}

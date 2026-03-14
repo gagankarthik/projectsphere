@@ -87,6 +87,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     });
 
     // Send email (best-effort — don't fail if SES isn't configured)
+    let emailSent = false;
+    let emailError: string | null = null;
     try {
       await sendInvitationEmail({
         to: email,
@@ -95,11 +97,13 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         role,
         token: invitation.token,
       });
+      emailSent = true;
     } catch (emailErr) {
       console.error("Failed to send invitation email:", emailErr);
+      emailError = emailErr instanceof Error ? emailErr.message : String(emailErr);
     }
 
-    return createdResponse(invitation);
+    return createdResponse({ ...invitation, emailSent, emailError });
   } catch (error) {
     return errorResponse(error);
   }
