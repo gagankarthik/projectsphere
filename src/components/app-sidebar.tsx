@@ -16,6 +16,7 @@ import {
   Bell,
   FolderKanban,
   SquareDashedBottom,
+  Folder,
 } from "lucide-react"
 
 import {
@@ -169,10 +170,11 @@ function NavMain({ workspaceId }: { workspaceId: string }) {
   const pathname = usePathname()
 
   const items = [
-    { label: "Dashboard", href: "/dashboard", icon: SquareDashedBottom },                                                 
-    { label: "Overview", href: workspaceId ? `/dashboard/workspaces/${workspaceId}` : "/dashboard/workspaces", icon: LayoutDashboard },
-    { label: "All Tasks",href: workspaceId ? `/dashboard/workspaces/${workspaceId}/tasks` : "#", icon: CheckSquare },
-    { label: "Members",  href: workspaceId ? `/dashboard/workspaces/${workspaceId}/members` : "#", icon: Users },
+    { label: "Dashboard", href: "/dashboard", icon: SquareDashedBottom, exact: true },
+    { label: "Overview", href: workspaceId ? `/dashboard/workspaces/${workspaceId}` : "/dashboard/workspaces", icon: LayoutDashboard, exact: true },
+    { label: "All Tasks", href: workspaceId ? `/dashboard/workspaces/${workspaceId}/tasks` : "#", icon: CheckSquare },
+    { label: "All Projects", href: workspaceId ? `/dashboard/workspaces/${workspaceId}/projects` : "#", icon: Folder },
+    { label: "Members", href: workspaceId ? `/dashboard/workspaces/${workspaceId}/members` : "#", icon: Users },
     { label: "Settings", href: workspaceId ? `/dashboard/workspaces/${workspaceId}/settings` : "#", icon: Settings },
   ]
 
@@ -181,11 +183,14 @@ function NavMain({ workspaceId }: { workspaceId: string }) {
       <SidebarGroupLabel>Workspace</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => {
-          const active =
-            pathname === item.href ||
-            (item.href !== "/" &&
-              item.href !== `/dashboard/workspaces/${workspaceId}` &&
-              pathname.startsWith(item.href))
+          let active = false
+          if (item.exact) {
+            // Exact match only
+            active = pathname === item.href
+          } else {
+            // Match if pathname equals or starts with the href
+            active = pathname === item.href || pathname.startsWith(item.href + "/")
+          }
           return (
             <SidebarMenuItem key={item.label}>
               <SidebarMenuButton asChild isActive={active} tooltip={item.label}>

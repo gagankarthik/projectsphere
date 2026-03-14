@@ -129,17 +129,59 @@ export async function getTasksByStatus(projectId: string, status: TaskStatus): P
 export async function updateTask(taskId: string, input: TaskUpdateInput): Promise<Task | null> {
   if (!(await getTaskById(taskId))) return null;
 
-  // Filter out empty strings for GSI key attributes
-  const cleanInput = { ...input };
-  if (cleanInput.assigneeId === "") delete cleanInput.assigneeId;
-  if (cleanInput.description === "") delete cleanInput.description;
-  if (cleanInput.dueDate === "") delete cleanInput.dueDate;
+  // Filter out empty strings and undefined values for GSI key attributes
+  const cleanInput: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(input)) {
+    // Skip undefined values - DynamoDB doesn't accept them
+    if (value === undefined) continue;
+    // Skip empty strings for GSI key attributes
+    if (value === "" && (key === "assigneeId" || key === "description" || key === "dueDate")) continue;
+    cleanInput[key] = value;
+  }
+
+  // If no fields to update (except updatedAt), just return current task
+  if (Object.keys(cleanInput).length === 0) {
+    return getTaskById(taskId);
+  }
 
   const fields = { ...cleanInput, updatedAt: new Date().toISOString() };
   const names: Record<string, string> = {};
   const values: Record<string, unknown> = {};
-  const exprs = Object.entries(fields).map(([k, v], i) => { names[`#a${i}`] = k; values[`:v${i}`] = v; return `#a${i} = :v${i}`; });
-  await dynamodb.send(new UpdateCommand({ TableName: T, Key: { taskId }, UpdateExpression: `SET ${exprs.join(", ")}`, ExpressionAttributeNames: names, ExpressionAttributeValues: values }));
+  const exprs: string[] = [];
+  const removeExprs: string[] = [];
+
+  let i = 0;
+  for (const [k, v] of Object.entries(fields)) {
+    // Handle null values as REMOVE operations for optional fields
+    if (v === null && (k === "assigneeId" || k === "dueDate")) {
+      names[`#r${i}`] = k;
+      removeExprs.push(`#r${i}`);
+    } else {
+      names[`#a${i}`] = k;
+      values[`:v${i}`] = v;
+      exprs.push(`#a${i} = :v${i}`);
+    }
+    i++;
+  }
+
+  let updateExpression = "";
+  if (exprs.length > 0) {
+    updateExpression = `SET ${exprs.join(", ")}`;
+  }
+  if (removeExprs.length > 0) {
+    updateExpression += ` REMOVE ${removeExprs.join(", ")}`;
+  }
+
+  if (updateExpression) {
+    await dynamodb.send(new UpdateCommand({
+      TableName: T,
+      Key: { taskId },
+      UpdateExpression: updateExpression.trim(),
+      ExpressionAttributeNames: names,
+      ...(Object.keys(values).length > 0 && { ExpressionAttributeValues: values })
+    }));
+  }
+
   return getTaskById(taskId);
 }
 

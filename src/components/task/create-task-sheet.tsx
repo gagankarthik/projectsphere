@@ -48,6 +48,7 @@ interface CreateTaskSheetProps {
   onSubmit: (projectId: string, data: CreateTaskInput) => Promise<void>;
   isSubmitting?: boolean;
   defaultStatus?: TaskStatus;
+  defaultDueDate?: string;
   workspaceId: string;
   projectId?: string;
   projects?: Project[];
@@ -60,6 +61,7 @@ export function CreateTaskSheet({
   onSubmit,
   isSubmitting,
   defaultStatus,
+  defaultDueDate,
   workspaceId,
   projectId,
   projects,
@@ -85,6 +87,7 @@ export function CreateTaskSheet({
       priority: "medium",
       labels: [],
       description: "",
+      dueDate: defaultDueDate || "",
     },
   });
 
@@ -104,6 +107,7 @@ export function CreateTaskSheet({
         priority: "medium",
         labels: [],
         description: "",
+        dueDate: defaultDueDate || "",
       });
     }
     onOpenChange(o);

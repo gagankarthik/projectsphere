@@ -75,14 +75,20 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     const body = await request.json();
     const parsed = updateTaskSchema.parse(body);
-    // Normalise nullable fields to undefined for the DB layer
-    const validatedData = {
-      ...parsed,
-      assigneeId: parsed.assigneeId ?? undefined,
-      dueDate: parsed.dueDate ?? undefined,
-    };
+    // Normalise nullable fields: use null to signal removal, keep undefined to skip
+    const validatedData: Record<string, unknown> = { ...parsed };
 
-    const updatedTask = await updateTask(taskId, validatedData);
+    // Handle assigneeId: if explicitly set to undefined/null in the body, use null to remove
+    if ("assigneeId" in body && (body.assigneeId === undefined || body.assigneeId === null || body.assigneeId === "")) {
+      validatedData.assigneeId = null; // Signal to remove from DynamoDB
+    }
+
+    // Handle dueDate: if explicitly set to undefined/null in the body, use null to remove
+    if ("dueDate" in body && (body.dueDate === undefined || body.dueDate === null || body.dueDate === "")) {
+      validatedData.dueDate = null; // Signal to remove from DynamoDB
+    }
+
+    const updatedTask = await updateTask(taskId, validatedData as Parameters<typeof updateTask>[1]);
     if (!updatedTask) {
       throw new NotFoundError("Task not found");
     }

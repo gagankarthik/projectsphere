@@ -221,7 +221,7 @@ export function TaskFullScreenView({
 
   const handleAssigneeChange = async (assigneeId: string) => {
     try {
-      await updateTaskAsync({ assigneeId: assigneeId === "unassigned" ? undefined : assigneeId });
+      await updateTaskAsync({ assigneeId: assigneeId === "unassigned" ? null : assigneeId });
       toast.success("Assignee updated");
     } catch {
       toast.error("Failed to update assignee");
