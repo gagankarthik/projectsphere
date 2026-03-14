@@ -2,17 +2,19 @@
 
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, CheckSquare, MessageSquare, GanttChart, CalendarDays, Settings, ChevronRight } from "lucide-react";
+import { LayoutDashboard, Columns3, List, CheckSquare, MessageSquare, GanttChart, CalendarDays, Settings, ChevronRight } from "lucide-react";
 import type { Project } from "@/types/project";
 
 interface ProjectHeaderProps {
   project: Project;
   workspaceId: string;
-  currentView: "overview" | "tasks" | "comments" | "timeline" | "calendar" | "settings";
+  currentView: "overview" | "board" | "list" | "tasks" | "comments" | "timeline" | "calendar" | "settings";
 }
 
 const TABS = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
+  { id: "board", label: "Board", icon: Columns3 },
+  { id: "list", label: "List", icon: List },
   { id: "tasks", label: "Tasks", icon: CheckSquare },
   { id: "comments", label: "Comments", icon: MessageSquare },
   { id: "timeline", label: "Timeline", icon: GanttChart },
