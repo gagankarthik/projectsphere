@@ -10,6 +10,6 @@ interface ProjectPageProps {
 export default function ProjectPage({ params }: ProjectPageProps) {
   const { workspaceId, projectId } = use(params);
 
-  // Redirect to board view by default
-  redirect(`/dashboard/workspaces/${workspaceId}/projects/${projectId}/board`);
+  // Redirect to overview by default
+  redirect(`/dashboard/workspaces/${workspaceId}/projects/${projectId}/overview`);
 }

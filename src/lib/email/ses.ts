@@ -1,17 +1,20 @@
 import nodemailer from "nodemailer";
 
+// Use non-NEXT_PUBLIC_ env vars for server-side, with fallback to NEXT_PUBLIC_ for backwards compatibility
+const SMTP_USER = process.env.NEXT_PUBLIC_AWS_SMTP || "";
+const SMTP_PASS = process.env.NEXT_PUBLIC_AWS_SMTP_PASSWORD || "";
+const FROM_EMAIL = process.env.NEXT_PUBLIC_AWS_SES_FROM_EMAIL || "noreply@projectsphere.app";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
 const transporter = nodemailer.createTransport({
   host: "email-smtp.us-east-2.amazonaws.com",
   port: 587,
   secure: false,
   auth: {
-    user: process.env.NEXT_PUBLIC_AWS_SMTP ?? "",
-    pass: process.env.NEXT_PUBLIC_AWS_SMTP_PASSWORD ?? "",
+    user: SMTP_USER,
+    pass: SMTP_PASS,
   },
 });
-
-const FROM_EMAIL = process.env.NEXT_PUBLIC_AWS_SES_FROM_EMAIL ?? "noreply@projectsphere.app";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 export async function sendInvitationEmail(opts: {
   to: string;
@@ -27,8 +30,9 @@ export async function sendInvitationEmail(opts: {
     from: FROM_EMAIL,
     appUrl: APP_URL,
     inviteUrl,
-    hasSmtpUser: !!process.env.NEXT_PUBLIC_AWS_SMTP,
-    hasSmtpPassword: !!process.env.NEXT_PUBLIC_AWS_SMTP_PASSWORD,
+    hasSmtpUser: !!SMTP_USER,
+    hasSmtpPassword: !!SMTP_PASS,
+    smtpUserLength: SMTP_USER.length,
   });
 
   const html = `

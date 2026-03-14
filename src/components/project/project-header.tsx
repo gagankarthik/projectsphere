@@ -1,47 +1,35 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Settings, TableProperties, Kanban, ChevronRight, CalendarDays, GanttChart } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LayoutDashboard, CheckSquare, MessageSquare, GanttChart, CalendarDays, Settings, ChevronRight } from "lucide-react";
 import type { Project } from "@/types/project";
 
 interface ProjectHeaderProps {
   project: Project;
   workspaceId: string;
-  currentView: "board" | "list" | "timeline" | "calendar";
+  currentView: "overview" | "tasks" | "comments" | "timeline" | "calendar" | "settings";
 }
 
 const TABS = [
-  { id: "board", label: "Board", icon: Kanban },
-  { id: "list", label: "Spreadsheet", icon: TableProperties },
+  { id: "overview", label: "Overview", icon: LayoutDashboard },
+  { id: "tasks", label: "Tasks", icon: CheckSquare },
+  { id: "comments", label: "Comments", icon: MessageSquare },
   { id: "timeline", label: "Timeline", icon: GanttChart },
   { id: "calendar", label: "Calendar", icon: CalendarDays },
+  { id: "settings", label: "Settings", icon: Settings },
 ] as const;
 
 export function ProjectHeader({ project, workspaceId, currentView }: ProjectHeaderProps) {
   return (
     <div className="flex flex-col gap-0">
-      {/* Breadcrumb + settings row */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-1.5 text-sm text-slate-500">
-          <Link href={`/dashboard/workspaces/${workspaceId}/projects`} className="hover:text-slate-700">
-            Projects
-          </Link>
-          <ChevronRight className="h-3.5 w-3.5" />
-          <span className="font-semibold text-slate-800">{project.name}</span>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 gap-1.5 text-slate-500 hover:text-slate-700"
-          asChild
-        >
-          <Link href={`/dashboard/workspaces/${workspaceId}/projects/${project.id}/settings`}>
-            <Settings className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline text-xs">Settings</span>
-          </Link>
-        </Button>
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-1.5 text-sm text-slate-500 mb-3">
+        <Link href={`/dashboard/workspaces/${workspaceId}/projects`} className="hover:text-slate-700">
+          Projects
+        </Link>
+        <ChevronRight className="h-3.5 w-3.5" />
+        <span className="font-semibold text-slate-800">{project.name}</span>
       </div>
 
       {/* View tabs */}

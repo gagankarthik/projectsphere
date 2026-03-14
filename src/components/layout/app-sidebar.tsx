@@ -125,7 +125,7 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={workspaceId ? startsWithPath(`/dashboard/workspaces/${workspaceId}/projects`) : false}
+                  isActive={workspaceId ? isActive(`/dashboard/workspaces/${workspaceId}/projects`) : false}
                 >
                   <Link href={workspaceId ? `/dashboard/workspaces/${workspaceId}/projects` : "/dashboard"}>
                     <FolderKanban className="h-4 w-4" />

@@ -4,6 +4,7 @@ import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ProjectHeader } from "@/components/project/project-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,13 +89,17 @@ export default function ProjectSettingsPage({ params }: ProjectSettingsPageProps
   if (!project) return <div className="text-sm text-muted-foreground">Project not found.</div>;
 
   return (
-    <div className="space-y-6 max-w-3xl">
-      <div>
-        <h1 className="text-2xl font-bold">{project.name} — Settings</h1>
+    <div className="space-y-6">
+      <ProjectHeader project={project} workspaceId={workspaceId} currentView="settings" />
+
+      <div className="max-w-3xl">
+        <h2 className="text-xl font-semibold">Settings</h2>
         <p className="text-sm text-muted-foreground mt-1">
           Manage project details, members, and danger zone actions.
         </p>
       </div>
+
+      <div className="max-w-3xl">
 
       <Tabs defaultValue="general">
         <TabsList className="mb-2">
@@ -247,6 +252,7 @@ export default function ProjectSettingsPage({ params }: ProjectSettingsPageProps
         onConfirm={handleDelete}
         isLoading={isDeleting}
       />
+      </div>
     </div>
   );
 }
